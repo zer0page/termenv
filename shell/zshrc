@@ -19,6 +19,18 @@ elif [ -f /usr/share/zsh/functions/Completion/Unix/_git ]; then
   autoload -Uz compinit && compinit
 fi
 
+# fzf keybindings (Ctrl+R history, Ctrl+T files, Alt+C cd)
+if command -v fzf &>/dev/null; then
+  # fzf 0.48+ ships a built-in init; older versions use shell scripts
+  if [[ "$(fzf --version 2>/dev/null | cut -d. -f1-2)" > "0.47" ]]; then
+    source <(fzf --zsh)
+  elif [ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ]; then
+    source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+  elif [ -f /usr/share/fzf/key-bindings.zsh ]; then
+    source /usr/share/fzf/key-bindings.zsh
+  fi
+fi
+
 # zoxide (autojump replacement, uses 'j' command)
 if command -v zoxide &>/dev/null; then
   eval "$(zoxide init zsh --cmd j)"
