@@ -96,14 +96,14 @@ echo "Installing termenv ($TERMENV_OS)..."
 
 # Install CLI tools
 if command -v brew &>/dev/null; then
-  for tool in zoxide bat fd git-delta lnav tig ripgrep fzf; do
+  for tool in vim tmux zoxide bat fd git-delta lnav tig ripgrep fzf; do
     if ! brew list "$tool" &>/dev/null; then
       echo "  Installing $tool..."
       brew install "$tool"
     fi
   done
 elif command -v apt-get &>/dev/null; then
-  for tool in zoxide bat fd-find git-delta lnav tig ripgrep fzf; do
+  for tool in vim tmux zoxide bat fd-find git-delta lnav tig ripgrep fzf; do
     if ! command -v "$tool" &>/dev/null; then
       echo "  Installing $tool (may need sudo)..."
       sudo apt-get install -y "$tool" 2>/dev/null || echo "  Skipped $tool (not in apt)"
