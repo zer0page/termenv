@@ -38,12 +38,12 @@ if [ "$TERMENV_OS" = "mac" ]; then
   export CLICOLOR=1
   export LSCOLORS=gxfxcxdxbxegedabagacad
   alias ls='ls -G'
-  alias ll='ls -Ghal'
-  alias la='ls -Gal'
+  alias ll='ls -hal'
+  alias la='ls -al'
 elif [ "$TERMENV_OS" = "linux" ]; then
   alias ls='ls --color=auto'
-  alias ll='ls --color=auto -hal'
-  alias la='ls --color=auto -al'
+  alias ll='ls -hal'
+  alias la='ls -al'
 fi
 
 # History — large (1M lines)

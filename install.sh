@@ -83,8 +83,8 @@ if [ "$1" = "--uninstall" ]; then
     local tmp
     tmp="$(mktemp)"
     trap 'rm -f "$tmp"' RETURN
-    grep -vF "$@" "$src" > "$tmp"
-    local rc=$?
+    local rc=0
+    grep -vF "$@" "$src" > "$tmp" || rc=$?
     # rc=0: some lines remain, rc=1: all lines filtered (fine), rc>=2: real error
     if [ "$rc" -ge 2 ]; then return "$rc"; fi
     mv "$tmp" "$src"
