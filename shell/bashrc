@@ -1,0 +1,25 @@
+# termenv — bash extensions
+
+source ~/.bash/termenv/common.sh
+
+# Bash defaults
+shopt -s checkwinsize         # fix terminal size after resize
+shopt -s no_empty_cmd_completion  # don't tab-complete on empty line
+
+# Bash history — no duplicates, append on exit
+export HISTCONTROL=ignoredups:erasedups
+shopt -s histappend
+
+# Git completion
+if [ -f /opt/homebrew/etc/bash_completion.d/git-completion.bash ]; then
+  source /opt/homebrew/etc/bash_completion.d/git-completion.bash
+elif [ -f /usr/share/bash-completion/completions/git ]; then
+  source /usr/share/bash-completion/completions/git
+elif [ -f /etc/bash_completion.d/git ]; then
+  source /etc/bash_completion.d/git
+fi
+
+# zoxide (autojump replacement, uses 'j' command)
+if command -v zoxide &>/dev/null; then
+  eval "$(zoxide init bash --cmd j)"
+fi
