@@ -15,14 +15,12 @@ SYMLINKS=(
   "$HOME/.vim/termenv/keys.vim:$DIR/vim/keys.vim"
   "$HOME/.vim/termenv/modules/go.vim:$DIR/vim/modules/go.vim"
   "$HOME/.vim/termenv/modules/rust.vim:$DIR/vim/modules/rust.vim"
-  "$HOME/.vim/termenv/modules/agent.vim:$DIR/vim/modules/agent.vim"
   "$HOME/.vim/termenv/platform/mac.vim:$DIR/vim/platform/mac.vim"
   "$HOME/.vim/termenv/platform/linux.vim:$DIR/vim/platform/linux.vim"
   "$HOME/.tmux.conf:$DIR/tmux/tmux.conf"
   "$HOME/.tmux/termenv/keys.conf:$DIR/tmux/keys.conf"
   "$HOME/.tmux/termenv/mouse.conf:$DIR/tmux/mouse.conf"
   "$HOME/.tmux/termenv/status.conf:$DIR/tmux/status.conf"
-  "$HOME/.tmux/termenv/modules/agent.conf:$DIR/tmux/modules/agent.conf"
   "$HOME/.tmux/termenv/platform/mac.conf:$DIR/tmux/platform/mac.conf"
   "$HOME/.tmux/termenv/platform/linux.conf:$DIR/tmux/platform/linux.conf"
   "$HOME/.zsh/termenv/zshrc:$DIR/shell/zshrc"
@@ -65,6 +63,10 @@ if [ "$1" = "--uninstall" ]; then
   for entry in "${SYMLINKS[@]}"; do
     unlink_one "${entry%%:*}" "${entry##*:}"
   done
+
+  # Agent symlinks (may or may not exist)
+  unlink_one "$HOME/.vim/termenv/modules/agent.vim" "$DIR/vim/modules/agent.vim"
+  unlink_one "$HOME/.tmux/termenv/modules/agent.conf" "$DIR/tmux/modules/agent.conf"
 
   rmdir "$HOME/.vim/termenv/modules" "$HOME/.vim/termenv/platform" "$HOME/.vim/termenv" 2>/dev/null || true
   rmdir "$HOME/.tmux/termenv/modules" "$HOME/.tmux/termenv/platform" "$HOME/.tmux/termenv" 2>/dev/null || true
@@ -138,9 +140,6 @@ if [ ! -f "$HOME/.termenv.conf" ]; then
 # Language modules
 TERMENV_VIM_GO=0
 TERMENV_VIM_RUST=0
-
-# Agent-native support (for AI coding agents like Claude Code)
-TERMENV_AGENT=1
 CONF
   echo "  Created ~/.termenv.conf (edit to enable modules)"
 fi
@@ -167,10 +166,15 @@ elif [ -f "$HOME/.bashrc" ]; then
   echo "  Already sourced in ~/.bashrc"
 fi
 
-# Agent setup (if enabled)
-source "$HOME/.termenv.conf" 2>/dev/null
-if [ "${TERMENV_AGENT:-0}" = "1" ]; then
+# Agent setup (optional)
+printf "Install agent tooling (Claude Code, Prism)? [Y/n] "
+read -r AGENT_REPLY
+if [ "$AGENT_REPLY" != "n" ] && [ "$AGENT_REPLY" != "N" ]; then
+  link_one "$HOME/.vim/termenv/modules/agent.vim" "$DIR/vim/modules/agent.vim"
+  link_one "$HOME/.tmux/termenv/modules/agent.conf" "$DIR/tmux/modules/agent.conf"
   "$DIR/agent/setup.sh"
+else
+  echo "  Skipped agent setup"
 fi
 
 # Install vim plugins (non-interactive)

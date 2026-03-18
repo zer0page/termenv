@@ -113,6 +113,6 @@ if $TERMENV_VIM_RUST == '1'
   source ~/.vim/termenv/modules/rust.vim
 endif
 
-if $TERMENV_AGENT == '1'
+if filereadable(expand('~/.vim/termenv/modules/agent.vim'))
   source ~/.vim/termenv/modules/agent.vim
 endif
