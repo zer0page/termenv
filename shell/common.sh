@@ -1,15 +1,19 @@
 # termenv — shared shell extensions (bash + zsh)
 
 # Platform detection + module config
-# Resolve this file's real path to locate platform.sh regardless of symlinks or repo location
+# Resolve this file's real path (through symlinks) to locate platform.sh
 if [ -n "${ZSH_VERSION-}" ]; then
-  eval '_TERMENV_SELF="${(%):-%x}"'
+  eval '_TERMENV_DIR="${${(%):-%x}:A:h}"'
 else
   _TERMENV_SELF="${BASH_SOURCE[0]}"
+  while [ -L "$_TERMENV_SELF" ]; do
+    _TERMENV_SELF="$(readlink "$_TERMENV_SELF")"
+  done
+  _TERMENV_DIR="$(cd -P "$(dirname "$_TERMENV_SELF")" && pwd -P)"
+  unset _TERMENV_SELF
 fi
-_TERMENV_DIR="$(cd -P "$(dirname "$_TERMENV_SELF")" && pwd -P)"
 source "$_TERMENV_DIR/../platform.sh"
-unset _TERMENV_SELF _TERMENV_DIR
+unset _TERMENV_DIR
 
 # Defaults
 export EDITOR=vim
@@ -32,7 +36,7 @@ if [ "$TERMENV_OS" = "mac" ]; then
   alias ls='ls -G'
   alias ll='ls -Ghal'
   alias la='ls -Gal'
-else
+elif [ "$TERMENV_OS" = "linux" ]; then
   alias ls='ls --color=auto'
   alias ll='ls --color=auto -hal'
   alias la='ls --color=auto -al'
