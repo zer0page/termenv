@@ -79,11 +79,11 @@ if [ "$1" = "--uninstall" ]; then
 
   # Remove source lines from shell rcs
   if [ -f "$HOME/.zshrc" ] && grep -qF 'source ~/.zsh/termenv/zshrc' "$HOME/.zshrc"; then
-    grep -vF -e '# termenv shell extensions' -e 'source ~/.zsh/termenv/zshrc' "$HOME/.zshrc" > "$HOME/.zshrc.tmp" && mv "$HOME/.zshrc.tmp" "$HOME/.zshrc"
+    { grep -vF -e '# termenv shell extensions' -e 'source ~/.zsh/termenv/zshrc' "$HOME/.zshrc" || true; } > "$HOME/.zshrc.tmp" && mv "$HOME/.zshrc.tmp" "$HOME/.zshrc"
     echo "  Removed source line from ~/.zshrc"
   fi
   if [ -f "$HOME/.bashrc" ] && grep -qF 'source ~/.bash/termenv/bashrc' "$HOME/.bashrc"; then
-    grep -vF -e '# termenv shell extensions' -e 'source ~/.bash/termenv/bashrc' "$HOME/.bashrc" > "$HOME/.bashrc.tmp" && mv "$HOME/.bashrc.tmp" "$HOME/.bashrc"
+    { grep -vF -e '# termenv shell extensions' -e 'source ~/.bash/termenv/bashrc' "$HOME/.bashrc" || true; } > "$HOME/.bashrc.tmp" && mv "$HOME/.bashrc.tmp" "$HOME/.bashrc"
     echo "  Removed source line from ~/.bashrc"
   fi
 

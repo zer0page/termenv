@@ -7,8 +7,9 @@ if [ -n "${ZSH_VERSION-}" ]; then
 else
   _TERMENV_SELF="${BASH_SOURCE[0]}"
 fi
-source "$(dirname "$(readlink -f "$_TERMENV_SELF")")/../platform.sh"
-unset _TERMENV_SELF
+_TERMENV_DIR="$(cd -P "$(dirname "$_TERMENV_SELF")" && pwd -P)"
+source "$_TERMENV_DIR/../platform.sh"
+unset _TERMENV_SELF _TERMENV_DIR
 
 # Defaults
 export EDITOR=vim
@@ -72,7 +73,9 @@ alias vi='vim'
 alias gcan='git commit --amend --no-edit'
 alias yolo='claude --dangerously-skip-permissions'
 
-# Auto-attach to tmux on SSH login
+# Auto-attach to tmux on interactive SSH login
 if [ -n "$SSH_CONNECTION" ] && [ -z "$TMUX" ] && command -v tmux &>/dev/null; then
-  exec tmux attach 2>/dev/null || exec tmux new-session
+  case "$-" in *i*)
+    tmux attach 2>/dev/null || tmux new-session
+  ;; esac
 fi
