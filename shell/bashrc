@@ -19,6 +19,17 @@ elif [ -f /etc/bash_completion.d/git ]; then
   source /etc/bash_completion.d/git
 fi
 
+# fzf keybindings (Ctrl+R history, Ctrl+T files, Alt+C cd)
+if command -v fzf &>/dev/null; then
+  if [[ "$(fzf --version 2>/dev/null | cut -d. -f1-2)" > "0.47" ]]; then
+    eval "$(fzf --bash)"
+  elif [ -f /opt/homebrew/opt/fzf/shell/key-bindings.bash ]; then
+    source /opt/homebrew/opt/fzf/shell/key-bindings.bash
+  elif [ -f /usr/share/fzf/key-bindings.bash ]; then
+    source /usr/share/fzf/key-bindings.bash
+  fi
+fi
+
 # zoxide (autojump replacement, uses 'j' command)
 if command -v zoxide &>/dev/null; then
   eval "$(zoxide init bash --cmd j)"

@@ -45,6 +45,13 @@ set nowb
 set noswapfile
 
 "==============
+" Persistent undo — survives vim restarts
+if has('persistent_undo')
+  set undodir=~/.vim/undodir
+  set undofile
+endif
+
+"==============
 " Indentation
 set expandtab
 set smarttab

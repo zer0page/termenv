@@ -46,6 +46,16 @@ if command -v delta &>/dev/null; then
   export GIT_PAGER='delta'
 fi
 
+# fzf — fuzzy finder shell integration
+if command -v fzf &>/dev/null; then
+  export FZF_DEFAULT_OPTS='--height 20% --layout=reverse'
+  # Use fd for file search if available
+  if command -v fd &>/dev/null; then
+    export FZF_DEFAULT_COMMAND='fd --type f --hidden --exclude .git'
+    export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+  fi
+fi
+
 # Aliases
 alias vi='vim'
 alias gcan='git commit --amend --no-edit'
