@@ -78,16 +78,23 @@ if [ "$1" = "--uninstall" ]; then
   [ -d "$HOME/.tmux/plugins/tpm" ] && echo "  Remove ~/.tmux/plugins/ manually if desired"
 
   # Remove source lines from shell rcs
+  _remove_lines() {
+    local src="$1"; shift
+    local tmp
+    tmp="$(mktemp)"
+    trap 'rm -f "$tmp"' RETURN
+    grep -vF "$@" "$src" > "$tmp"
+    local rc=$?
+    # rc=0: some lines remain, rc=1: all lines filtered (fine), rc>=2: real error
+    if [ "$rc" -ge 2 ]; then return "$rc"; fi
+    mv "$tmp" "$src"
+  }
   if [ -f "$HOME/.zshrc" ] && grep -qF 'source ~/.zsh/termenv/zshrc' "$HOME/.zshrc"; then
-    _tmp="$(mktemp)"
-    { grep -vF -e '# termenv shell extensions' -e 'source ~/.zsh/termenv/zshrc' "$HOME/.zshrc" || true; } > "$_tmp" && mv "$_tmp" "$HOME/.zshrc"
-    rm -f "$_tmp"
+    _remove_lines "$HOME/.zshrc" -e '# termenv shell extensions' -e 'source ~/.zsh/termenv/zshrc'
     echo "  Removed source line from ~/.zshrc"
   fi
   if [ -f "$HOME/.bashrc" ] && grep -qF 'source ~/.bash/termenv/bashrc' "$HOME/.bashrc"; then
-    _tmp="$(mktemp)"
-    { grep -vF -e '# termenv shell extensions' -e 'source ~/.bash/termenv/bashrc' "$HOME/.bashrc" || true; } > "$_tmp" && mv "$_tmp" "$HOME/.bashrc"
-    rm -f "$_tmp"
+    _remove_lines "$HOME/.bashrc" -e '# termenv shell extensions' -e 'source ~/.bash/termenv/bashrc'
     echo "  Removed source line from ~/.bashrc"
   fi
 

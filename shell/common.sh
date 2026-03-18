@@ -7,10 +7,14 @@ if [ -n "${ZSH_VERSION-}" ]; then
 else
   _TERMENV_SELF="${BASH_SOURCE[0]}"
   while [ -L "$_TERMENV_SELF" ]; do
-    _TERMENV_SELF="$(readlink "$_TERMENV_SELF")"
+    _TERMENV_LINK="$(readlink "$_TERMENV_SELF")"
+    case "$_TERMENV_LINK" in
+      /*) _TERMENV_SELF="$_TERMENV_LINK" ;;
+      *)  _TERMENV_SELF="$(dirname "$_TERMENV_SELF")/$_TERMENV_LINK" ;;
+    esac
   done
   _TERMENV_DIR="$(cd -P "$(dirname "$_TERMENV_SELF")" && pwd -P)"
-  unset _TERMENV_SELF
+  unset _TERMENV_SELF _TERMENV_LINK
 fi
 source "$_TERMENV_DIR/../platform.sh"
 unset _TERMENV_DIR
