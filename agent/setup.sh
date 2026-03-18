@@ -5,7 +5,7 @@
 #   ./agent/setup.sh --uninstall  Uninstall
 #
 # Installs Claude Code and Prism status line.
-# Can be run standalone or called from install.sh when TERMENV_AGENT=1.
+# Can be run standalone or called from install.sh.
 
 set -e
 
@@ -52,20 +52,24 @@ if [ ! -f "$HOME/.claude/prism" ]; then
   ARCH=$(uname -m)
   OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 
-  if [ "$OS" = "darwin" ]; then
-    if [ "$ARCH" = "arm64" ]; then
-      PRISM_TARGET="aarch64-apple-darwin"
-    else
-      PRISM_TARGET="x86_64-apple-darwin"
-    fi
-  elif [ "$OS" = "linux" ]; then
-    PRISM_TARGET="x86_64-unknown-linux-gnu"
+  if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
+    PRISM_ARCH="arm64"
+  else
+    PRISM_ARCH="amd64"
+  fi
+
+  if [ "$OS" = "darwin" ] || [ "$OS" = "linux" ]; then
+    PRISM_TARGET="${OS}-${PRISM_ARCH}"
   fi
 
   if [ -n "$PRISM_TARGET" ]; then
-    curl -fsSL "https://github.com/himattm/prism/releases/latest/download/prism-${PRISM_TARGET}" -o "$HOME/.claude/prism"
-    chmod +x "$HOME/.claude/prism"
-    echo "  Prism installed"
+    if curl -fsSL "https://github.com/himattm/prism/releases/latest/download/prism-${PRISM_TARGET}" -o "$HOME/.claude/prism"; then
+      chmod +x "$HOME/.claude/prism"
+      echo "  Prism installed"
+    else
+      rm -f "$HOME/.claude/prism"
+      echo "  WARNING: Failed to download Prism (skipping)"
+    fi
   else
     echo "  WARNING: Unsupported platform for Prism ($OS/$ARCH)"
   fi
