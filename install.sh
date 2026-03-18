@@ -81,7 +81,7 @@ if [ "$1" = "--uninstall" ]; then
   _remove_lines() {
     local src="$1"; shift
     local tmp
-    tmp="$(mktemp)"
+    tmp="$(mktemp -t termenv.XXXXXX)"
     trap 'rm -f "$tmp"' RETURN
     local rc=0
     grep -vF "$@" "$src" > "$tmp" || rc=$?
