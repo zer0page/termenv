@@ -1,7 +1,14 @@
 # termenv — shared shell extensions (bash + zsh)
 
 # Platform detection + module config
-source ~/Development/termenv/platform.sh
+# Resolve this file's real path to locate platform.sh regardless of symlinks or repo location
+if [ -n "${ZSH_VERSION-}" ]; then
+  eval '_TERMENV_SELF="${(%):-%x}"'
+else
+  _TERMENV_SELF="${BASH_SOURCE[0]}"
+fi
+source "$(dirname "$(readlink -f "$_TERMENV_SELF")")/../platform.sh"
+unset _TERMENV_SELF
 
 # Defaults
 export EDITOR=vim
@@ -17,9 +24,18 @@ export LESS_TERMCAP_ue=$'\e[0m'
 export LESS_TERMCAP_us=$'\e[1;32m'
 
 # Colors
-export CLICOLOR=1
-export LSCOLORS=gxfxcxdxbxegedabagacad
 alias grep='grep --color=auto'
+if [ "$TERMENV_OS" = "mac" ]; then
+  export CLICOLOR=1
+  export LSCOLORS=gxfxcxdxbxegedabagacad
+  alias ls='ls -G'
+  alias ll='ls -Ghal'
+  alias la='ls -Gal'
+else
+  alias ls='ls --color=auto'
+  alias ll='ls --color=auto -hal'
+  alias la='ls --color=auto -al'
+fi
 
 # History — large (1M lines)
 export HISTSIZE=1000000
@@ -30,11 +46,6 @@ export HISTFILE=~/.shell_history
 if command -v bat &>/dev/null; then
   alias cat='bat --plain'
 fi
-
-# ls with colors
-alias ls='ls -G'
-alias ll='ls -Ghal'
-alias la='ls -Gal'
 
 # fd (better find)
 if command -v fd &>/dev/null; then
@@ -60,3 +71,8 @@ fi
 alias vi='vim'
 alias gcan='git commit --amend --no-edit'
 alias yolo='claude --dangerously-skip-permissions'
+
+# Auto-attach to tmux on SSH login
+if [ -n "$SSH_CONNECTION" ] && [ -z "$TMUX" ] && command -v tmux &>/dev/null; then
+  exec tmux attach 2>/dev/null || exec tmux new-session
+fi
