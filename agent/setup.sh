@@ -20,8 +20,24 @@ if [ "$1" = "--uninstall" ]; then
     echo "  Removed prism"
   fi
 
+  SETTINGS="$HOME/.claude/settings.json"
+  if [ -f "$SETTINGS" ] && command -v jq &>/dev/null; then
+    PRISM_HOOKS="UserPromptSubmit Stop SessionStart SessionEnd PreCompact Setup PreToolUse PostToolUse PermissionRequest Notification SubagentStop"
+    MERGED=$(jq 'del(.statusLine)' "$SETTINGS")
+    for EVENT in $PRISM_HOOKS; do
+      MERGED=$(echo "$MERGED" | jq --arg e "$EVENT" --arg cmd '$HOME/.claude/prism hook' '
+        if .hooks[$e] then
+          .hooks[$e] |= map(select(.hooks[]?.command | startswith($cmd) | not))
+          | if .hooks[$e] == [] then del(.hooks[$e]) else . end
+        else . end
+      ')
+    done
+    MERGED=$(echo "$MERGED" | jq 'if .hooks == {} then del(.hooks) else . end')
+    echo "$MERGED" > "$SETTINGS"
+    echo "  Removed Prism config from settings.json"
+  fi
+
   echo "  Claude Code left installed (uninstall manually if desired)"
-  echo "  ~/.claude/settings.json left in place"
   exit 0
 fi
 
@@ -45,36 +61,18 @@ else
   echo "  Claude Code already installed"
 fi
 
-# Install Prism status line
-mkdir -p "$HOME/.claude"
-if [ ! -f "$HOME/.claude/prism" ]; then
-  echo "  Installing Prism status line..."
-  ARCH=$(uname -m)
-  OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-
-  if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
-    PRISM_ARCH="arm64"
-  else
-    PRISM_ARCH="amd64"
-  fi
-
-  if [ "$OS" = "darwin" ] || [ "$OS" = "linux" ]; then
-    PRISM_TARGET="${OS}-${PRISM_ARCH}"
-  fi
-
-  if [ -n "$PRISM_TARGET" ]; then
-    if curl -fsSL "https://github.com/himattm/prism/releases/latest/download/prism-${PRISM_TARGET}" -o "$HOME/.claude/prism"; then
-      chmod +x "$HOME/.claude/prism"
-      echo "  Prism installed"
-    else
-      rm -f "$HOME/.claude/prism"
-      echo "  WARNING: Failed to download Prism (skipping)"
-    fi
-  else
-    echo "  WARNING: Unsupported platform for Prism ($OS/$ARCH)"
-  fi
+# Install Prism status line (via official install script)
+echo "  Installing Prism status line..."
+if command -v jq &>/dev/null; then
+  curl -fsSL https://raw.githubusercontent.com/himattm/prism/main/install.sh | bash
 else
-  echo "  Prism already installed"
+  echo "  WARNING: jq not found — installing jq first..."
+  if command -v brew &>/dev/null; then
+    brew install jq
+    curl -fsSL https://raw.githubusercontent.com/himattm/prism/main/install.sh | bash
+  else
+    echo "  WARNING: Cannot install jq (need brew). Skipping Prism."
+  fi
 fi
 
 echo "Agent tooling setup complete!"
