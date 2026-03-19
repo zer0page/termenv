@@ -5,6 +5,11 @@
 
 set -eo pipefail
 
+if [ "$1" = "--uninstall" ]; then
+  echo "Agent tooling uninstall is not supported — remove Claude Code and Prism manually if desired."
+  exit 0
+fi
+
 echo "Setting up agent tooling..."
 
 # Install Claude Code
