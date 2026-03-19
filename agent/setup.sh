@@ -34,7 +34,7 @@ echo "Setting up agent tooling..."
 if ! command -v claude &>/dev/null; then
   if command -v brew &>/dev/null; then
     echo "  Installing Claude Code via brew..."
-    brew install claude
+    brew install claude-code
   elif command -v npm &>/dev/null; then
     echo "  Installing Claude Code via npm..."
     npm install -g @anthropic-ai/claude-code
