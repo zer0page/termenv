@@ -9,9 +9,7 @@
 
 set -eo pipefail
 
-# Pinned to Prism v0.10.1 to avoid unpinned supply-chain risk
-PRISM_VERSION="v0.10.1"
-PRISM_INSTALL_URL="https://raw.githubusercontent.com/himattm/prism/${PRISM_VERSION}/install.sh"
+PRISM_INSTALL_URL="https://raw.githubusercontent.com/himattm/prism/main/install.sh"
 
 #==============
 # Uninstall
@@ -32,26 +30,42 @@ if [ "$1" = "--uninstall" ]; then
       PRISM_CMD="$HOME/.claude/prism hook"
       PRISM_HOOKS="UserPromptSubmit Stop SessionStart SessionEnd PreCompact Setup PreToolUse PostToolUse PermissionRequest Notification SubagentStop"
 
+      # Build updated JSON in a temp file; write atomically to avoid truncating on jq error
+      TMP_SETTINGS=$(mktemp)
+      _cleanup_settings() { rm -f "$TMP_SETTINGS"; }
+      trap _cleanup_settings EXIT
+
       # Remove statusLine only if it was set by Prism (command starts with prism path)
-      MERGED=$(jq --arg cmd "$HOME/.claude/prism" '
+      if ! jq --arg cmd "$HOME/.claude/prism" '
         if (.statusLine.command // "") | startswith($cmd)
         then del(.statusLine)
         else . end
-      ' "$SETTINGS")
+      ' "$SETTINGS" > "$TMP_SETTINGS" 2>/dev/null; then
+        echo "  WARNING: settings.json may be invalid JSON — skipping Prism config cleanup."
+        exit 0
+      fi
 
       # Remove hook entries whose command starts with the Prism binary path
       for EVENT in $PRISM_HOOKS; do
-        MERGED=$(echo "$MERGED" | jq --arg e "$EVENT" --arg cmd "$PRISM_CMD" '
+        if ! jq --arg e "$EVENT" --arg cmd "$PRISM_CMD" '
           if .hooks[$e] then
             .hooks[$e] |= map(select((.command // "") | startswith($cmd) | not))
             | if .hooks[$e] == [] then del(.hooks[$e]) else . end
           else . end
-        ')
+        ' "$TMP_SETTINGS" > "${TMP_SETTINGS}.next" 2>/dev/null; then
+          echo "  WARNING: jq error processing hooks — skipping remaining hook cleanup."
+          break
+        fi
+        mv "${TMP_SETTINGS}.next" "$TMP_SETTINGS"
       done
 
-      MERGED=$(echo "$MERGED" | jq 'if .hooks == {} then del(.hooks) else . end')
-      echo "$MERGED" > "$SETTINGS"
-      echo "  Removed Prism config from settings.json"
+      if jq 'if .hooks == {} then del(.hooks) else . end' "$TMP_SETTINGS" > "${TMP_SETTINGS}.next" 2>/dev/null; then
+        mv "${TMP_SETTINGS}.next" "$TMP_SETTINGS"
+        mv "$TMP_SETTINGS" "$SETTINGS"
+        echo "  Removed Prism config from settings.json"
+      else
+        echo "  WARNING: jq error finalizing settings — skipping write to avoid data loss."
+      fi
     fi
   fi
 
@@ -79,17 +93,21 @@ else
   echo "  Claude Code already installed"
 fi
 
-# Install Prism status line (via official install script, pinned to $PRISM_VERSION)
-echo "  Installing Prism status line (${PRISM_VERSION})..."
+# Install Prism status line (via official install script, pinned to immutable commit SHA)
+echo "  Installing Prism status line..."
 _install_prism() {
-  # Download to a temp file so curl failures are detected (pipefail-safe)
   local tmp
   tmp=$(mktemp)
-  if curl -fsSL "$PRISM_INSTALL_URL" -o "$tmp"; then
-    bash "$tmp"
-    rm -f "$tmp"
-  else
-    rm -f "$tmp"
+  # Ensure temp file is cleaned up regardless of outcome
+  trap "rm -f '$tmp' '${tmp}.x'" RETURN
+
+  # Download to temp file so curl failures are caught (avoids silent curl|bash failures)
+  if ! curl -fsSL "$PRISM_INSTALL_URL" -o "$tmp"; then
+    return 1
+  fi
+
+  # Run installer; capture exit status without letting set -e abort the parent
+  if ! bash "$tmp"; then
     return 1
   fi
 }
