@@ -7,7 +7,11 @@
 # Installs Claude Code and Prism status line.
 # Can be run standalone or called from install.sh.
 
-set -e
+set -eo pipefail
+
+# Pinned to Prism v0.10.1 to avoid unpinned supply-chain risk
+PRISM_VERSION="v0.10.1"
+PRISM_INSTALL_URL="https://raw.githubusercontent.com/himattm/prism/${PRISM_VERSION}/install.sh"
 
 #==============
 # Uninstall
@@ -21,20 +25,34 @@ if [ "$1" = "--uninstall" ]; then
   fi
 
   SETTINGS="$HOME/.claude/settings.json"
-  if [ -f "$SETTINGS" ] && command -v jq &>/dev/null; then
-    PRISM_HOOKS="UserPromptSubmit Stop SessionStart SessionEnd PreCompact Setup PreToolUse PostToolUse PermissionRequest Notification SubagentStop"
-    MERGED=$(jq 'del(.statusLine)' "$SETTINGS")
-    for EVENT in $PRISM_HOOKS; do
-      MERGED=$(echo "$MERGED" | jq --arg e "$EVENT" --arg cmd '$HOME/.claude/prism hook' '
-        if .hooks[$e] then
-          .hooks[$e] |= map(select(.hooks[]?.command | startswith($cmd) | not))
-          | if .hooks[$e] == [] then del(.hooks[$e]) else . end
+  if [ -f "$SETTINGS" ]; then
+    if ! command -v jq &>/dev/null; then
+      echo "  WARNING: jq not found — cannot clean up Prism config from settings.json. Remove manually."
+    else
+      PRISM_CMD="$HOME/.claude/prism hook"
+      PRISM_HOOKS="UserPromptSubmit Stop SessionStart SessionEnd PreCompact Setup PreToolUse PostToolUse PermissionRequest Notification SubagentStop"
+
+      # Remove statusLine only if it was set by Prism (command starts with prism path)
+      MERGED=$(jq --arg cmd "$HOME/.claude/prism" '
+        if (.statusLine.command // "") | startswith($cmd)
+        then del(.statusLine)
         else . end
-      ')
-    done
-    MERGED=$(echo "$MERGED" | jq 'if .hooks == {} then del(.hooks) else . end')
-    echo "$MERGED" > "$SETTINGS"
-    echo "  Removed Prism config from settings.json"
+      ' "$SETTINGS")
+
+      # Remove hook entries whose command starts with the Prism binary path
+      for EVENT in $PRISM_HOOKS; do
+        MERGED=$(echo "$MERGED" | jq --arg e "$EVENT" --arg cmd "$PRISM_CMD" '
+          if .hooks[$e] then
+            .hooks[$e] |= map(select((.command // "") | startswith($cmd) | not))
+            | if .hooks[$e] == [] then del(.hooks[$e]) else . end
+          else . end
+        ')
+      done
+
+      MERGED=$(echo "$MERGED" | jq 'if .hooks == {} then del(.hooks) else . end')
+      echo "$MERGED" > "$SETTINGS"
+      echo "  Removed Prism config from settings.json"
+    fi
   fi
 
   echo "  Claude Code left installed (uninstall manually if desired)"
@@ -61,18 +79,19 @@ else
   echo "  Claude Code already installed"
 fi
 
-# Install Prism status line (via official install script)
-echo "  Installing Prism status line..."
+# Install Prism status line (via official install script, pinned to $PRISM_VERSION)
+echo "  Installing Prism status line (${PRISM_VERSION})..."
 _install_prism() {
-  if ! command -v jq &>/dev/null; then
-    if command -v brew &>/dev/null; then
-      brew install jq || return 1
-    else
-      echo "  WARNING: jq not found and brew unavailable. Skipping Prism."
-      return 1
-    fi
+  # Download to a temp file so curl failures are detected (pipefail-safe)
+  local tmp
+  tmp=$(mktemp)
+  if curl -fsSL "$PRISM_INSTALL_URL" -o "$tmp"; then
+    bash "$tmp"
+    rm -f "$tmp"
+  else
+    rm -f "$tmp"
+    return 1
   fi
-  curl -fsSL https://raw.githubusercontent.com/himattm/prism/main/install.sh | bash
 }
 if ! _install_prism; then
   echo "  WARNING: Prism install failed — skipping. You can install manually: https://github.com/himattm/prism"
