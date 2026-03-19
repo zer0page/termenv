@@ -117,7 +117,7 @@ if command -v brew &>/dev/null; then
   done
 elif command -v apt-get &>/dev/null; then
   for tool in vim tmux zoxide bat fd-find git-delta lnav tig ripgrep fzf jq; do
-    if ! command -v "$tool" &>/dev/null; then
+    if ! dpkg -s "$tool" &>/dev/null; then
       echo "  Installing $tool (may need sudo)..."
       sudo apt-get install -y "$tool" 2>/dev/null || echo "  Skipped $tool (not in apt)"
     fi
