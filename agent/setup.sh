@@ -63,16 +63,19 @@ fi
 
 # Install Prism status line (via official install script)
 echo "  Installing Prism status line..."
-if command -v jq &>/dev/null; then
-  curl -fsSL https://raw.githubusercontent.com/himattm/prism/main/install.sh | bash
-else
-  echo "  WARNING: jq not found — installing jq first..."
-  if command -v brew &>/dev/null; then
-    brew install jq
-    curl -fsSL https://raw.githubusercontent.com/himattm/prism/main/install.sh | bash
-  else
-    echo "  WARNING: Cannot install jq (need brew). Skipping Prism."
+_install_prism() {
+  if ! command -v jq &>/dev/null; then
+    if command -v brew &>/dev/null; then
+      brew install jq || return 1
+    else
+      echo "  WARNING: jq not found and brew unavailable. Skipping Prism."
+      return 1
+    fi
   fi
+  curl -fsSL https://raw.githubusercontent.com/himattm/prism/main/install.sh | bash
+}
+if ! _install_prism; then
+  echo "  WARNING: Prism install failed — skipping. You can install manually: https://github.com/himattm/prism"
 fi
 
 echo "Agent tooling setup complete!"
