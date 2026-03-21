@@ -80,22 +80,27 @@ fi
 alias vi='vim'
 alias gcan='git commit --amend --no-edit'
 yolo() {
-  if [ "$1" = "clear" ]; then
+  if [ "$1" = "--clear-session" ]; then
     unset CLAUDE_SESSION
     shift
-    command claude --dangerously-skip-permissions "$@"
-  else
-    if [ -z "$CLAUDE_SESSION" ]; then
-      if command -v uuidgen &>/dev/null; then
-        export CLAUDE_SESSION="$(uuidgen)"
-      elif [ -r /proc/sys/kernel/random/uuid ]; then
-        export CLAUDE_SESSION="$(cat /proc/sys/kernel/random/uuid)"
-      else
-        export CLAUDE_SESSION="claude-$$-$(date +%s)"
-      fi
-    fi
-    command claude --dangerously-skip-permissions --continue --name "$CLAUDE_SESSION" "$@"
+    [ "$#" -eq 0 ] && return 0
   fi
+
+  _yolo_resume=""
+  if [ -z "$CLAUDE_SESSION" ]; then
+    if command -v uuidgen &>/dev/null; then
+      export CLAUDE_SESSION="$(uuidgen)"
+    elif [ -r /proc/sys/kernel/random/uuid ]; then
+      export CLAUDE_SESSION="$(cat /proc/sys/kernel/random/uuid)"
+    else
+      export CLAUDE_SESSION="claude-$$-$(date +%s)"
+    fi
+  else
+    _yolo_resume="--continue"
+  fi
+
+  command claude --dangerously-skip-permissions $_yolo_resume --name "$CLAUDE_SESSION" "$@"
+  unset _yolo_resume
 }
 
 # Auto-attach to tmux on interactive SSH login
