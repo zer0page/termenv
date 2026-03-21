@@ -80,11 +80,20 @@ fi
 alias vi='vim'
 alias gcan='git commit --amend --no-edit'
 yolo() {
-  if [[ "$1" == "clear" ]]; then
+  if [ "$1" = "clear" ]; then
     unset CLAUDE_SESSION
-    command claude --dangerously-skip-permissions "${@:2}"
+    shift
+    command claude --dangerously-skip-permissions "$@"
   else
-    [[ -z "$CLAUDE_SESSION" ]] && export CLAUDE_SESSION=$(uuidgen)
+    if [ -z "$CLAUDE_SESSION" ]; then
+      if command -v uuidgen &>/dev/null; then
+        export CLAUDE_SESSION="$(uuidgen)"
+      elif [ -r /proc/sys/kernel/random/uuid ]; then
+        export CLAUDE_SESSION="$(cat /proc/sys/kernel/random/uuid)"
+      else
+        export CLAUDE_SESSION="claude-$$-$(date +%s)"
+      fi
+    fi
     command claude --dangerously-skip-permissions --continue --name "$CLAUDE_SESSION" "$@"
   fi
 }
