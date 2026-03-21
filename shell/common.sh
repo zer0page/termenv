@@ -79,7 +79,15 @@ fi
 # Aliases
 alias vi='vim'
 alias gcan='git commit --amend --no-edit'
-alias yolo='claude --dangerously-skip-permissions'
+yolo() {
+  if [[ "$1" == "clear" ]]; then
+    unset CLAUDE_SESSION
+    command claude --dangerously-skip-permissions "${@:2}"
+  else
+    [[ -z "$CLAUDE_SESSION" ]] && export CLAUDE_SESSION=$(uuidgen)
+    command claude --dangerously-skip-permissions --continue --name "$CLAUDE_SESSION" "$@"
+  fi
+}
 
 # Auto-attach to tmux on interactive SSH login
 if [ -n "$SSH_CONNECTION" ] && [ -z "$TMUX" ] && command -v tmux &>/dev/null; then
