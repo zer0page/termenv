@@ -96,8 +96,8 @@ __git_branch() {
   if [ -n "${ZSH_VERSION-}" ]; then
     # Escape % so branch names can't inject zsh prompt escape sequences
     local escaped="${branch//%/%%}"
-    [ "$branch" = "$default" ] && printf ' %%F{green}(%s)%%f' "$escaped" \
-                                || printf ' %%F{yellow}(%s)%%f' "$escaped"
+    [ "$branch" = "$default" ] && printf ' %%F{green}(%s)%%f ' "$escaped" \
+                                || printf ' %%F{yellow}(%s)%%f ' "$escaped"
   else
     # \001/\002 wrap non-printing chars so bash counts prompt width correctly
     [ "$branch" = "$default" ] && printf ' \001\e[32m\002(%s)\001\e[0m\002' "$branch" \
@@ -128,7 +128,12 @@ yolo() {
     _yolo_resume="--continue"
   fi
 
-  command claude --dangerously-skip-permissions $_yolo_resume --name "$CLAUDE_SESSION" "$@"
+  if [ -n "$_yolo_resume" ]; then
+    command claude --dangerously-skip-permissions --continue --name "$CLAUDE_SESSION" "$@" || \
+      command claude --dangerously-skip-permissions --name "$CLAUDE_SESSION" "$@"
+  else
+    command claude --dangerously-skip-permissions --name "$CLAUDE_SESSION" "$@"
+  fi
   unset _yolo_resume
 }
 
