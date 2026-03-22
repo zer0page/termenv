@@ -29,7 +29,12 @@ __termenv_update_prompt() {
   __TERMENV_GIT_BRANCH="$(__git_branch)"
   return $_s
 }
-PROMPT_COMMAND="__termenv_update_prompt${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+# Prepend to PROMPT_COMMAND; handle both array and string forms
+if declare -p PROMPT_COMMAND &>/dev/null && [[ "$(declare -p PROMPT_COMMAND 2>/dev/null)" == "declare -a"* ]]; then
+  PROMPT_COMMAND=(__termenv_update_prompt "${PROMPT_COMMAND[@]}")
+else
+  PROMPT_COMMAND="__termenv_update_prompt${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+fi
 PS1='\u@\h:\w${__TERMENV_GIT_BRANCH}\$ '
 
 # fzf keybindings (Ctrl+R history, Ctrl+T files, Alt+C cd)

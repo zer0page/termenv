@@ -22,7 +22,8 @@ __termenv_update_prompt() {
   __TERMENV_GIT_BRANCH="$(__git_branch)"
   return $_s
 }
-precmd_functions+=(__termenv_update_prompt)
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd __termenv_update_prompt
 PROMPT='%n@%m:%~${__TERMENV_GIT_BRANCH}%# '
 
 # fzf keybindings (Ctrl+R history, Ctrl+T files, Alt+C cd)
