@@ -76,6 +76,15 @@ if command -v fzf &>/dev/null; then
   fi
 fi
 
+# Git branch for prompt — works in bash and zsh, silent outside repos
+__git_branch() {
+  git rev-parse --is-inside-work-tree 2>/dev/null | grep -q true || return
+  local branch
+  branch=$(git branch --show-current 2>/dev/null) || \
+    branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || return
+  printf ' (%s)' "$branch"
+}
+
 # Aliases
 alias vi='vim'
 alias gcan='git commit --amend --no-edit'

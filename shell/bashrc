@@ -10,14 +10,21 @@ shopt -s no_empty_cmd_completion  # don't tab-complete on empty line
 export HISTCONTROL=ignoredups:erasedups
 shopt -s histappend
 
-# Git completion
+# Git completion — try known locations across mac (homebrew) and linux distros
 if [ -f /opt/homebrew/etc/bash_completion.d/git-completion.bash ]; then
   source /opt/homebrew/etc/bash_completion.d/git-completion.bash
+elif [ -f /usr/local/etc/bash_completion.d/git-completion.bash ]; then
+  source /usr/local/etc/bash_completion.d/git-completion.bash
 elif [ -f /usr/share/bash-completion/completions/git ]; then
   source /usr/share/bash-completion/completions/git
+elif [ -f /usr/lib/git-core/git-completion.bash ]; then
+  source /usr/lib/git-core/git-completion.bash
 elif [ -f /etc/bash_completion.d/git ]; then
   source /etc/bash_completion.d/git
 fi
+
+# Prompt with git branch
+PS1='\u@\h:\w$(__git_branch)\$ '
 
 # fzf keybindings (Ctrl+R history, Ctrl+T files, Alt+C cd)
 if command -v fzf &>/dev/null; then
