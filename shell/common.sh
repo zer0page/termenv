@@ -91,18 +91,21 @@ __git_branch() {
     branch=$(git rev-parse --short HEAD 2>/dev/null || true)
   fi
   [ -z "$branch" ] && return
-  # main/master → green, all other branches → yellow (matches Prism)
+  # Resolve remote default branch; fall back to main/master for local-only repos
+  local default
+  default=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null)
+  default="${default##*/}"
+  case "$default" in
+    '') case "$branch" in main|master) default="$branch" ;; esac ;;
+  esac
+  # Default branch → green, feature branches → yellow (matches Prism)
   # \001/\002 wrap non-printing chars so bash counts prompt width correctly
   if [ -n "${ZSH_VERSION-}" ]; then
-    case "$branch" in
-      main|master) printf ' %%F{green}(%s)%%f' "$branch" ;;
-      *)           printf ' %%F{yellow}(%s)%%f' "$branch" ;;
-    esac
+    [ "$branch" = "$default" ] && printf ' %%F{green}(%s)%%f' "$branch" \
+                                || printf ' %%F{yellow}(%s)%%f' "$branch"
   else
-    case "$branch" in
-      main|master) printf ' \001\e[32m\002(%s)\001\e[0m\002' "$branch" ;;
-      *)           printf ' \001\e[33m\002(%s)\001\e[0m\002' "$branch" ;;
-    esac
+    [ "$branch" = "$default" ] && printf ' \001\e[32m\002(%s)\001\e[0m\002' "$branch" \
+                                || printf ' \001\e[33m\002(%s)\001\e[0m\002' "$branch"
   fi
 }
 
