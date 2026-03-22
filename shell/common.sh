@@ -91,11 +91,18 @@ __git_branch() {
     branch=$(git rev-parse --short HEAD 2>/dev/null || true)
   fi
   [ -z "$branch" ] && return
+  # main/master → green, all other branches → yellow (matches Prism)
   # \001/\002 wrap non-printing chars so bash counts prompt width correctly
   if [ -n "${ZSH_VERSION-}" ]; then
-    printf ' %%F{yellow}(%s)%%f' "$branch"
+    case "$branch" in
+      main|master) printf ' %%F{green}(%s)%%f' "$branch" ;;
+      *)           printf ' %%F{yellow}(%s)%%f' "$branch" ;;
+    esac
   else
-    printf ' \001\e[33m\002(%s)\001\e[0m\002' "$branch"
+    case "$branch" in
+      main|master) printf ' \001\e[32m\002(%s)\001\e[0m\002' "$branch" ;;
+      *)           printf ' \001\e[33m\002(%s)\001\e[0m\002' "$branch" ;;
+    esac
   fi
 }
 
