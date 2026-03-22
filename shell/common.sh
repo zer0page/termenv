@@ -77,28 +77,21 @@ if command -v fzf &>/dev/null; then
 fi
 
 # Git branch for prompt — works in bash and zsh, silent outside repos
-# Color matches Prism status bar (yellow = \e[33m)
+# Color matches Prism: default branch → green, feature branches → yellow
+# Called once per prompt via PROMPT_COMMAND (bash) or precmd_functions (zsh),
+# not during PS1/PROMPT expansion, so it never clobbers $?.
 __git_branch() {
-  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || return
-  local branch
-  # --show-current exits 0 but returns empty on detached HEAD, so check value
-  branch=$(git branch --show-current 2>/dev/null || true)
-  if [ -z "$branch" ]; then
-    branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
-  fi
-  # abbrev-ref returns "HEAD" on detached HEAD; fall back to short SHA
-  if [ -z "$branch" ] || [ "$branch" = "HEAD" ]; then
-    branch=$(git rev-parse --short HEAD 2>/dev/null || true)
-  fi
-  [ -z "$branch" ] && return
+  local branch default
+  # symbolic-ref: branch name on normal HEAD, exits non-zero on detached/non-repo
+  # rev-parse --short: short SHA fallback for detached HEAD
+  branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null) || \
+    branch=$(git rev-parse --short HEAD 2>/dev/null) || return
   # Resolve remote default branch; fall back to main/master for local-only repos
-  local default
   default=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null)
   default="${default##*/}"
   case "$default" in
     '') case "$branch" in main|master) default="$branch" ;; esac ;;
   esac
-  # Default branch → green, feature branches → yellow (matches Prism)
   # \001/\002 wrap non-printing chars so bash counts prompt width correctly
   if [ -n "${ZSH_VERSION-}" ]; then
     [ "$branch" = "$default" ] && printf ' %%F{green}(%s)%%f' "$branch" \

@@ -15,9 +15,15 @@ setopt INC_APPEND_HISTORY     # write immediately, not on exit
 # Git completion — zsh bundles _git natively; compinit activates it
 autoload -Uz compinit && compinit -i
 
-# Prompt with git branch
+# Prompt with git branch — computed in precmd_functions so $? is never clobbered
 setopt PROMPT_SUBST
-PROMPT='%n@%m:%~$(__git_branch)%# '  # branch color handled in __git_branch via %F{yellow}
+__termenv_update_prompt() {
+  local _s=$?
+  __TERMENV_GIT_BRANCH="$(__git_branch)"
+  return $_s
+}
+precmd_functions+=(__termenv_update_prompt)
+PROMPT='%n@%m:%~${__TERMENV_GIT_BRANCH}%# '
 
 # fzf keybindings (Ctrl+R history, Ctrl+T files, Alt+C cd)
 if command -v fzf &>/dev/null; then

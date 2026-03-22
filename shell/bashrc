@@ -23,8 +23,14 @@ elif [ -f /etc/bash_completion.d/git ]; then
   source /etc/bash_completion.d/git
 fi
 
-# Prompt with git branch
-PS1='\u@\h:\w$(__git_branch)\$ '
+# Prompt with git branch — computed in PROMPT_COMMAND so $? is never clobbered
+__termenv_update_prompt() {
+  local _s=$?
+  __TERMENV_GIT_BRANCH="$(__git_branch)"
+  return $_s
+}
+PROMPT_COMMAND="__termenv_update_prompt${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+PS1='\u@\h:\w${__TERMENV_GIT_BRANCH}\$ '
 
 # fzf keybindings (Ctrl+R history, Ctrl+T files, Alt+C cd)
 if command -v fzf &>/dev/null; then
