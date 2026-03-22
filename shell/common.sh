@@ -93,13 +93,13 @@ __git_branch() {
   case "$default" in
     '') case "$branch" in main|master) default="$branch" ;; esac ;;
   esac
-  # \001/\002 wrap non-printing chars so bash counts prompt width correctly
   if [ -n "${ZSH_VERSION-}" ]; then
     # Escape % so branch names can't inject zsh prompt escape sequences
     local escaped="${branch//%/%%}"
     [ "$branch" = "$default" ] && printf ' %%F{green}(%s)%%f' "$escaped" \
                                 || printf ' %%F{yellow}(%s)%%f' "$escaped"
   else
+    # \001/\002 wrap non-printing chars so bash counts prompt width correctly
     [ "$branch" = "$default" ] && printf ' \001\e[32m\002(%s)\001\e[0m\002' "$branch" \
                                 || printf ' \001\e[33m\002(%s)\001\e[0m\002' "$branch"
   fi

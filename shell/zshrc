@@ -15,7 +15,7 @@ setopt INC_APPEND_HISTORY     # write immediately, not on exit
 # Git completion — zsh bundles _git natively; compinit activates it
 autoload -Uz compinit && compinit -i
 
-# Prompt with git branch — computed in precmd_functions so $? is never clobbered
+# Prompt with git branch — computed in precmd hook so $? is never clobbered
 setopt PROMPT_SUBST
 __termenv_update_prompt() {
   local _s=$?
