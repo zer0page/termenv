@@ -95,9 +95,9 @@ __git_branch() {
   esac
   if [ -n "${ZSH_VERSION-}" ]; then
     # Escape % so branch names can't inject zsh prompt escape sequences
-    local escaped="${branch//%/%%}"
-    [ "$branch" = "$default" ] && printf ' %%F{green}(%s)%%f ' "$escaped" \
-                                || printf ' %%F{yellow}(%s)%%f ' "$escaped"
+    local escaped="${branch:gs/%/%%}"
+    [ "$branch" = "$default" ] && printf ' %%{\e[32m%%}(%s)%%{\e[0m%%}' "$escaped" \
+                                || printf ' %%{\e[33m%%}(%s)%%{\e[0m%%}' "$escaped"
   else
     # \001/\002 wrap non-printing chars so bash counts prompt width correctly
     [ "$branch" = "$default" ] && printf ' \001\e[32m\002(%s)\001\e[0m\002' "$branch" \
