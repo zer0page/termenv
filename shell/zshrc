@@ -13,11 +13,11 @@ setopt HIST_REDUCE_BLANKS     # trim whitespace
 setopt INC_APPEND_HISTORY     # write immediately, not on exit
 
 # Git completion — zsh bundles _git natively; compinit activates it
-autoload -Uz compinit && compinit
+autoload -Uz compinit && compinit -i
 
 # Prompt with git branch
 setopt PROMPT_SUBST
-PROMPT='%n@%m:%~$(__git_branch)%# '
+PROMPT='%n@%m:%~$(__git_branch)%# '  # branch color handled in __git_branch via %F{yellow}
 
 # fzf keybindings (Ctrl+R history, Ctrl+T files, Alt+C cd)
 if command -v fzf &>/dev/null; then

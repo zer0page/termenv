@@ -79,10 +79,18 @@ fi
 # Git branch for prompt — works in bash and zsh, silent outside repos
 # Color matches Prism status bar (yellow = \e[33m)
 __git_branch() {
-  git rev-parse --is-inside-work-tree 2>/dev/null | grep -q true || return
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || return
   local branch
-  branch=$(git branch --show-current 2>/dev/null) || \
-    branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || return
+  # --show-current exits 0 but returns empty on detached HEAD, so check value
+  branch=$(git branch --show-current 2>/dev/null || true)
+  if [ -z "$branch" ]; then
+    branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+  fi
+  # abbrev-ref returns "HEAD" on detached HEAD; fall back to short SHA
+  if [ -z "$branch" ] || [ "$branch" = "HEAD" ]; then
+    branch=$(git rev-parse --short HEAD 2>/dev/null || true)
+  fi
+  [ -z "$branch" ] && return
   # \001/\002 wrap non-printing chars so bash counts prompt width correctly
   if [ -n "${ZSH_VERSION-}" ]; then
     printf ' %%F{yellow}(%s)%%f' "$branch"
