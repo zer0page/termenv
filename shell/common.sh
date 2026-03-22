@@ -81,6 +81,7 @@ fi
 # Called once per prompt via PROMPT_COMMAND (bash) or precmd_functions (zsh),
 # not during PS1/PROMPT expansion, so it never clobbers $?.
 __git_branch() {
+  command -v git >/dev/null || return
   local branch default
   # symbolic-ref: branch name on normal HEAD, exits non-zero on detached/non-repo
   # rev-parse --short: short SHA fallback for detached HEAD
@@ -94,8 +95,10 @@ __git_branch() {
   esac
   # \001/\002 wrap non-printing chars so bash counts prompt width correctly
   if [ -n "${ZSH_VERSION-}" ]; then
-    [ "$branch" = "$default" ] && printf ' %%F{green}(%s)%%f' "$branch" \
-                                || printf ' %%F{yellow}(%s)%%f' "$branch"
+    # Escape % so branch names can't inject zsh prompt escape sequences
+    local escaped="${branch//%/%%}"
+    [ "$branch" = "$default" ] && printf ' %%F{green}(%s)%%f' "$escaped" \
+                                || printf ' %%F{yellow}(%s)%%f' "$escaped"
   else
     [ "$branch" = "$default" ] && printf ' \001\e[32m\002(%s)\001\e[0m\002' "$branch" \
                                 || printf ' \001\e[33m\002(%s)\001\e[0m\002' "$branch"
