@@ -10,14 +10,33 @@ shopt -s no_empty_cmd_completion  # don't tab-complete on empty line
 export HISTCONTROL=ignoredups:erasedups
 shopt -s histappend
 
-# Git completion
+# Git completion — try known locations across mac (homebrew) and linux distros
 if [ -f /opt/homebrew/etc/bash_completion.d/git-completion.bash ]; then
   source /opt/homebrew/etc/bash_completion.d/git-completion.bash
+elif [ -f /usr/local/etc/bash_completion.d/git-completion.bash ]; then
+  source /usr/local/etc/bash_completion.d/git-completion.bash
 elif [ -f /usr/share/bash-completion/completions/git ]; then
   source /usr/share/bash-completion/completions/git
+elif [ -f /usr/lib/git-core/git-completion.bash ]; then
+  source /usr/lib/git-core/git-completion.bash
 elif [ -f /etc/bash_completion.d/git ]; then
   source /etc/bash_completion.d/git
 fi
+
+# Prompt with git branch — computed in PROMPT_COMMAND so $? is never clobbered
+__termenv_update_prompt() {
+  local _s=$?
+  __TERMENV_GIT_BRANCH="$(__git_branch)"
+  return $_s
+}
+# Append to PROMPT_COMMAND so it runs last and its $? restore is the final state;
+# handle both array and string forms
+if declare -p PROMPT_COMMAND &>/dev/null && [[ "$(declare -p PROMPT_COMMAND 2>/dev/null)" == "declare -a"* ]]; then
+  PROMPT_COMMAND=("${PROMPT_COMMAND[@]}" __termenv_update_prompt)
+else
+  PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND;}__termenv_update_prompt"
+fi
+PS1='\u@\h:\w${__TERMENV_GIT_BRANCH}\$ '
 
 # fzf keybindings (Ctrl+R history, Ctrl+T files, Alt+C cd)
 if command -v fzf &>/dev/null; then

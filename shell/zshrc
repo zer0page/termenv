@@ -12,12 +12,19 @@ setopt HIST_IGNORE_ALL_DUPS   # remove older duplicate
 setopt HIST_REDUCE_BLANKS     # trim whitespace
 setopt INC_APPEND_HISTORY     # write immediately, not on exit
 
-# Git completion
-if [ -f /opt/homebrew/share/zsh/site-functions/_git ]; then
-  autoload -Uz compinit && compinit
-elif [ -f /usr/share/zsh/functions/Completion/Unix/_git ]; then
-  autoload -Uz compinit && compinit
-fi
+# Git completion — zsh bundles _git natively; compinit activates it
+autoload -Uz compinit && compinit -i
+
+# Prompt with git branch — computed in precmd hook so $? is never clobbered
+setopt PROMPT_SUBST
+__termenv_update_prompt() {
+  local _s=$?
+  __TERMENV_GIT_BRANCH="$(__git_branch)"
+  return $_s
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd __termenv_update_prompt
+PROMPT='%n@%m:%~${__TERMENV_GIT_BRANCH}%# '
 
 # fzf keybindings (Ctrl+R history, Ctrl+T files, Alt+C cd)
 if command -v fzf &>/dev/null; then
