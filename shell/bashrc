@@ -29,11 +29,12 @@ __termenv_update_prompt() {
   __TERMENV_GIT_BRANCH="$(__git_branch)"
   return $_s
 }
-# Prepend to PROMPT_COMMAND; handle both array and string forms
+# Append to PROMPT_COMMAND so it runs last and its $? restore is the final state;
+# handle both array and string forms
 if declare -p PROMPT_COMMAND &>/dev/null && [[ "$(declare -p PROMPT_COMMAND 2>/dev/null)" == "declare -a"* ]]; then
-  PROMPT_COMMAND=(__termenv_update_prompt "${PROMPT_COMMAND[@]}")
+  PROMPT_COMMAND=("${PROMPT_COMMAND[@]}" __termenv_update_prompt)
 else
-  PROMPT_COMMAND="__termenv_update_prompt${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+  PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND;}__termenv_update_prompt"
 fi
 PS1='\u@\h:\w${__TERMENV_GIT_BRANCH}\$ '
 
