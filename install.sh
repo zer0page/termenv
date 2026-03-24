@@ -166,8 +166,9 @@ elif [ -f "$HOME/.zshrc" ]; then
   echo "  Already sourced in ~/.zshrc"
 fi
 
-# Wire shell extensions into .bashrc
+# Wire shell extensions into .bashrc (create if missing on Linux)
 BASH_SOURCE_LINE='source ~/.bash/termenv/bashrc'
+[ ! -f "$HOME/.bashrc" ] && [ "$TERMENV_OS" = "linux" ] && touch "$HOME/.bashrc"
 if [ -f "$HOME/.bashrc" ] && ! grep -qF "$BASH_SOURCE_LINE" "$HOME/.bashrc"; then
   echo "" >> "$HOME/.bashrc"
   echo "# termenv shell extensions" >> "$HOME/.bashrc"
