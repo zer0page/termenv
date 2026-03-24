@@ -41,6 +41,7 @@ if [ "$TERMENV_OS" = "mac" ]; then
   alias ll='ls -hal'
   alias la='ls -al'
 elif [ "$TERMENV_OS" = "linux" ]; then
+  command -v dircolors &>/dev/null && eval "$(dircolors -b)"
   alias ls='ls --color=auto'
   alias ll='ls -hal'
   alias la='ls -al'
@@ -108,6 +109,7 @@ __git_branch() {
 # Aliases
 alias vi='vim'
 alias gcan='git commit --amend --no-edit'
+unalias yolo 2>/dev/null
 yolo() {
   if [ "$1" = "--clear-session" ]; then
     unset CLAUDE_SESSION
@@ -115,26 +117,26 @@ yolo() {
     [ "$#" -eq 0 ] && return 0
   fi
 
-  _yolo_resume=""
+  local yolo_args=()
   if [ -z "$CLAUDE_SESSION" ]; then
+    # Generate a UUID for this shell/pane and use it as the session ID
     if command -v uuidgen &>/dev/null; then
-      export CLAUDE_SESSION="$(uuidgen)"
+      export CLAUDE_SESSION="$(uuidgen | tr '[:upper:]' '[:lower:]')"
     elif [ -r /proc/sys/kernel/random/uuid ]; then
       export CLAUDE_SESSION="$(cat /proc/sys/kernel/random/uuid)"
     else
-      export CLAUDE_SESSION="claude-$$-$(date +%s)"
+      # Fallback: generate a pseudo-UUID from PID + timestamp
+      local ts pid16
+      ts="$(date +%s)"
+      pid16="$(($$  & 0xFFFF))"
+      export CLAUDE_SESSION="$(printf '%08x-%04x-%04x-%04x-%012x' "$$" "$pid16" "$pid16" "$pid16" "$ts")"
     fi
+    yolo_args=(--session-id "$CLAUDE_SESSION")
   else
-    _yolo_resume="--continue"
+    yolo_args=(--resume "$CLAUDE_SESSION")
   fi
 
-  if [ -n "$_yolo_resume" ]; then
-    command claude --dangerously-skip-permissions --continue --name "$CLAUDE_SESSION" "$@" || \
-      command claude --dangerously-skip-permissions --name "$CLAUDE_SESSION" "$@"
-  else
-    command claude --dangerously-skip-permissions --name "$CLAUDE_SESSION" "$@"
-  fi
-  unset _yolo_resume
+  command claude --dangerously-skip-permissions "${yolo_args[@]}" "$@"
 }
 
 # Auto-attach to tmux on interactive SSH login
