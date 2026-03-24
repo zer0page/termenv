@@ -117,7 +117,7 @@ yolo() {
     [ "$#" -eq 0 ] && return 0
   fi
 
-  _yolo_args=""
+  local yolo_args=()
   if [ -z "$CLAUDE_SESSION" ]; then
     # Generate a UUID for this shell/pane and use it as the session ID
     if command -v uuidgen &>/dev/null; then
@@ -126,17 +126,17 @@ yolo() {
       export CLAUDE_SESSION="$(cat /proc/sys/kernel/random/uuid)"
     else
       # Fallback: generate a pseudo-UUID from PID + timestamp
-      _ts="$(date +%s)"
-      export CLAUDE_SESSION="$(printf '%08x-%04x-%04x-%04x-%012x' "$$" "$$" "$$" "$$" "$_ts")"
-      unset _ts
+      local ts pid16
+      ts="$(date +%s)"
+      pid16="$(($$  & 0xFFFF))"
+      export CLAUDE_SESSION="$(printf '%08x-%04x-%04x-%04x-%012x' "$$" "$pid16" "$pid16" "$pid16" "$ts")"
     fi
-    _yolo_args="--session-id $CLAUDE_SESSION"
+    yolo_args=(--session-id "$CLAUDE_SESSION")
   else
-    _yolo_args="--resume $CLAUDE_SESSION"
+    yolo_args=(--resume "$CLAUDE_SESSION")
   fi
 
-  command claude --dangerously-skip-permissions $_yolo_args "$@"
-  unset _yolo_args
+  command claude --dangerously-skip-permissions "${yolo_args[@]}" "$@"
 }
 
 # Auto-attach to tmux on interactive SSH login
