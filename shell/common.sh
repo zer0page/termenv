@@ -111,7 +111,7 @@ alias vi='vim'
 alias gcan='git commit --amend --no-edit'
 unalias yolo 2>/dev/null
 yolo() {
-  if [ "$1" = "--clear-session" ]; then
+  if [ "$1" = "clear" ] || [ "$1" = "--clear-session" ]; then
     unset CLAUDE_SESSION
     shift
     [ "$#" -eq 0 ] && return 0
