@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 # termenv — agent/AI tooling setup
-# Installs Claude Code and Prism status line.
+# Installs Claude Code, Prism status line, and claude-skills.
 # Can be run standalone or called from install.sh.
 
 set -eo pipefail
 
+SKILLS_REPO="$HOME/.claude/claude-skills"
+
 if [ "$1" = "--uninstall" ]; then
-	echo "Agent tooling uninstall is not supported — remove Claude Code and Prism manually if desired."
+	echo "Uninstalling agent tooling..."
+	if [ -x "$SKILLS_REPO/install" ]; then
+		"$SKILLS_REPO/install" --uninstall || echo "  WARNING: claude-skills uninstall failed; continuing"
+	fi
+	echo "  Remove Claude Code and Prism manually if desired."
 	exit 0
 fi
 
@@ -35,6 +41,30 @@ if curl -fsSL https://raw.githubusercontent.com/himattm/prism/main/install.sh -o
 	bash "$tmp" || echo "  WARNING: Prism install failed — install manually: https://github.com/himattm/prism"
 else
 	echo "  WARNING: Failed to download Prism installer — install manually: https://github.com/himattm/prism"
+fi
+
+# Install claude-skills (shared Claude Code skills)
+if command -v git &>/dev/null; then
+	mkdir -p "$(dirname "$SKILLS_REPO")"
+	if [ -d "$SKILLS_REPO/.git" ]; then
+		echo "  Updating claude-skills..."
+		git -C "$SKILLS_REPO" pull --ff-only --quiet || echo "  WARNING: claude-skills pull failed; using existing version"
+	elif [ -d "$SKILLS_REPO" ]; then
+		echo "  WARNING: $SKILLS_REPO exists but is not a git repo; skipping claude-skills"
+	else
+		echo "  Cloning claude-skills..."
+		if ! git clone --quiet https://github.com/zer0page/claude-skills.git "$SKILLS_REPO"; then
+			echo "  WARNING: claude-skills clone failed; skipping"
+			rm -rf "$SKILLS_REPO"
+		fi
+	fi
+	if [ -x "$SKILLS_REPO/install" ]; then
+		"$SKILLS_REPO/install" || echo "  WARNING: claude-skills install failed; continuing"
+	else
+		echo "  WARNING: claude-skills install script not found; skipping"
+	fi
+else
+	echo "  WARNING: git not found; skipping claude-skills install"
 fi
 
 echo "Agent tooling setup complete!"
