@@ -113,35 +113,7 @@ alias gcan='git commit --amend --no-edit'
 # shellcheck disable=SC2262
 unalias yolo 2>/dev/null
 yolo() {
-  if [ "$1" = "clear" ] || [ "$1" = "--clear-session" ]; then
-    unset CLAUDE_SESSION
-    shift
-    [ "$#" -eq 0 ] && return 0
-  fi
-
-  local yolo_args=()
-  if [ -z "$CLAUDE_SESSION" ]; then
-    # Generate a UUID for this shell/pane and use it as the session ID
-    if command -v uuidgen &>/dev/null; then
-      # shellcheck disable=SC2155
-      export CLAUDE_SESSION="$(uuidgen | tr '[:upper:]' '[:lower:]')"
-    elif [ -r /proc/sys/kernel/random/uuid ]; then
-      # shellcheck disable=SC2155
-      export CLAUDE_SESSION="$(cat /proc/sys/kernel/random/uuid)"
-    else
-      # Fallback: generate a pseudo-UUID from PID + timestamp
-      local ts pid16
-      ts="$(date +%s)"
-      pid16="$(($$  & 0xFFFF))"
-      # shellcheck disable=SC2155
-      export CLAUDE_SESSION="$(printf '%08x-%04x-%04x-%04x-%012x' "$$" "$pid16" "$pid16" "$pid16" "$ts")"
-    fi
-    yolo_args=(--session-id "$CLAUDE_SESSION")
-  else
-    yolo_args=(--resume "$CLAUDE_SESSION")
-  fi
-
-  command claude --dangerously-skip-permissions "${yolo_args[@]}" "$@"
+  command claude --dangerously-skip-permissions "$@"
 }
 
 # Auto-attach to tmux on interactive SSH login
