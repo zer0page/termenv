@@ -86,7 +86,7 @@ if [ "$1" = "--uninstall" ]; then
 	# Agent symlinks and skills (may or may not exist)
 	unlink_one "$HOME/.vim/termenv/modules/agent.vim" "$DIR/vim/modules/agent.vim"
 	unlink_one "$HOME/.tmux/termenv/modules/agent.conf" "$DIR/tmux/modules/agent.conf"
-	"$DIR/agent/setup.sh" --uninstall
+	"$DIR/agent/setup.sh" --uninstall || echo "  WARNING: Agent uninstall failed; continuing"
 
 	# Pre-commit hook
 	HOOKS_DIR="$(_resolve_hooks_dir)" && unlink_one "$HOOKS_DIR/pre-commit" "$DIR/hooks/pre-commit"

@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # termenv — agent/AI tooling setup
-# Installs Claude Code and Prism status line.
+# Installs Claude Code, Prism status line, and claude-skills.
 # Can be run standalone or called from install.sh.
 
 set -eo pipefail
 
+SKILLS_REPO="$HOME/.claude/claude-skills"
+
 if [ "$1" = "--uninstall" ]; then
 	echo "Uninstalling agent tooling..."
-	SKILLS_REPO="$HOME/.claude/claude-skills"
 	if [ -x "$SKILLS_REPO/install" ]; then
-		"$SKILLS_REPO/install" --uninstall
+		"$SKILLS_REPO/install" --uninstall || echo "  WARNING: claude-skills uninstall failed; continuing"
 	fi
 	echo "  Remove Claude Code and Prism manually if desired."
 	exit 0
@@ -43,12 +44,13 @@ else
 fi
 
 # Install claude-skills (shared Claude Code skills)
-SKILLS_REPO="$HOME/.claude/claude-skills"
 if command -v git &>/dev/null; then
 	mkdir -p "$(dirname "$SKILLS_REPO")"
 	if [ -d "$SKILLS_REPO/.git" ]; then
 		echo "  Updating claude-skills..."
-		git -C "$SKILLS_REPO" pull --quiet
+		git -C "$SKILLS_REPO" pull --ff-only --quiet || echo "  WARNING: claude-skills pull failed; using existing version"
+	elif [ -d "$SKILLS_REPO" ]; then
+		echo "  WARNING: $SKILLS_REPO exists but is not a git repo; skipping claude-skills"
 	else
 		echo "  Cloning claude-skills..."
 		git clone --quiet https://github.com/zer0page/claude-skills.git "$SKILLS_REPO"
