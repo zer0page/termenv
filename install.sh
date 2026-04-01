@@ -68,6 +68,18 @@ if [ "$1" = "--uninstall" ]; then
 	unlink_one "$HOME/.vim/termenv/modules/agent.vim" "$DIR/vim/modules/agent.vim"
 	unlink_one "$HOME/.tmux/termenv/modules/agent.conf" "$DIR/tmux/modules/agent.conf"
 
+	# Pre-commit hook
+	if command -v git >/dev/null 2>&1 && git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1; then
+		HOOKS_DIR="$(git -C "$DIR" rev-parse --git-path hooks 2>/dev/null || true)"
+		if [ -n "$HOOKS_DIR" ]; then
+			case "$HOOKS_DIR" in
+			/*) ;;
+			*) HOOKS_DIR="$DIR/$HOOKS_DIR" ;;
+			esac
+			unlink_one "$HOOKS_DIR/pre-commit" "$DIR/hooks/pre-commit"
+		fi
+	fi
+
 	rmdir "$HOME/.vim/termenv/modules" "$HOME/.vim/termenv/platform" "$HOME/.vim/termenv" 2>/dev/null || true
 	rmdir "$HOME/.tmux/termenv/modules" "$HOME/.tmux/termenv/platform" "$HOME/.tmux/termenv" 2>/dev/null || true
 	rmdir "$HOME/.zsh/termenv" 2>/dev/null || true
