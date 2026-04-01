@@ -29,7 +29,7 @@ fi
 
 # Install Prism status line (handles settings.json wiring itself)
 echo "  Installing Prism..."
-tmp=$(mktemp)
+tmp=$(mktemp "${TMPDIR:-/tmp}/prism-install.XXXXXX")
 trap 'rm -f "$tmp"' EXIT
 if curl -fsSL https://raw.githubusercontent.com/himattm/prism/main/install.sh -o "$tmp"; then
 	bash "$tmp" || echo "  WARNING: Prism install failed — install manually: https://github.com/himattm/prism"

@@ -79,7 +79,7 @@ jobs:
         run: sudo apt-get update -q && sudo apt-get install -y -q zsh
       - name: Install round-trip
         run: |
-          export FAKE_HOME="$(mktemp -d)"
+          export FAKE_HOME="$(mktemp -d 2>/dev/null || mktemp -d -t 'termenv.XXXXXX')"
           export HOME="$FAKE_HOME"
           export TERMENV_CI=1
 
