@@ -145,8 +145,13 @@ for entry in "${SYMLINKS[@]}"; do
 	link_one "${entry%%:*}" "${entry##*:}"
 done
 
-# Install pre-commit hook
-link_one "$DIR/.git/hooks/pre-commit" "$DIR/hooks/pre-commit"
+# Install pre-commit hook (only if this is a Git repository)
+if command -v git >/dev/null 2>&1 && git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1; then
+	HOOKS_DIR="$(git -C "$DIR" rev-parse --git-path hooks 2>/dev/null || true)"
+	if [ -n "$HOOKS_DIR" ]; then
+		link_one "$HOOKS_DIR/pre-commit" "$DIR/hooks/pre-commit"
+	fi
+fi
 
 # Create default termenv.conf
 if [ ! -f "$HOME/.termenv.conf" ]; then

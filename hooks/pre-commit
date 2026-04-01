@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# termenv pre-commit hook — runs ShellCheck + shfmt on staged shell files
+# termenv pre-commit hook — runs ShellCheck + shfmt on working tree contents of staged shell paths
 
 set -e
 
@@ -11,11 +11,14 @@ SHFMT_FILES=()
 while IFS= read -r file; do
 	[ -z "$file" ] && continue
 	case "$file" in
-	shell/zshrc) continue ;;                          # no bash tool supports zsh
-	shell/common.sh) SHELLCHECK_FILES+=("$file") ;;   # shellcheck only, no shfmt
-	*.sh | shell/bashrc) SHELLCHECK_FILES+=("$file"); SHFMT_FILES+=("$file") ;;
+	shell/zshrc) continue ;;                        # no bash tool supports zsh
+	shell/common.sh) SHELLCHECK_FILES+=("$file") ;; # lint only, skip formatter
+	*.sh | shell/bashrc)
+		SHELLCHECK_FILES+=("$file")
+		SHFMT_FILES+=("$file")
+		;;
 	esac
-done < <(git diff --cached --name-only --diff-filter=ACM)
+done < <(git diff --cached --name-only --diff-filter=ACMR)
 
 [ ${#SHELLCHECK_FILES[@]} -eq 0 ] && [ ${#SHFMT_FILES[@]} -eq 0 ] && exit 0
 
