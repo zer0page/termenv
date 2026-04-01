@@ -57,7 +57,7 @@ jobs:
               echo "::error::MISSING: $relpath (referenced in SYMLINKS array)"
               errors=$((errors + 1))
             fi
-          done < <(grep -oP '\$DIR/\K[^"]+' install.sh)
+          done < <(sed -n '/^SYMLINKS=/,/^)/p' install.sh | grep -oP '\$DIR/\K[^"]+')
           if [ "$errors" -gt 0 ]; then
             exit 1
           fi
