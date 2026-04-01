@@ -54,15 +54,17 @@ unlink_one() {
 	fi
 }
 
-# Resolve the active git hooks directory, honoring core.hooksPath
+# Resolve the repo's git hooks directory.
+# Skips if core.hooksPath is set (shared hooks dir, not repo-specific).
 _resolve_hooks_dir() {
 	command -v git >/dev/null 2>&1 || return 1
 	git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || return 1
-	local hdir
-	hdir="$(git -C "$DIR" config --get core.hooksPath 2>/dev/null || true)"
-	if [ -z "$hdir" ]; then
-		hdir="$(git -C "$DIR" rev-parse --git-path hooks 2>/dev/null || true)"
+	# Don't install into a shared hooks directory
+	if [ -n "$(git -C "$DIR" config --get core.hooksPath 2>/dev/null)" ]; then
+		return 1
 	fi
+	local hdir
+	hdir="$(git -C "$DIR" rev-parse --git-path hooks 2>/dev/null || true)"
 	[ -z "$hdir" ] && return 1
 	case "$hdir" in
 	/*) ;;
