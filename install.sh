@@ -54,6 +54,23 @@ unlink_one() {
 	fi
 }
 
+# Resolve the active git hooks directory, honoring core.hooksPath
+_resolve_hooks_dir() {
+	command -v git >/dev/null 2>&1 || return 1
+	git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1 || return 1
+	local hdir
+	hdir="$(git -C "$DIR" config --get core.hooksPath 2>/dev/null || true)"
+	if [ -z "$hdir" ]; then
+		hdir="$(git -C "$DIR" rev-parse --git-path hooks 2>/dev/null || true)"
+	fi
+	[ -z "$hdir" ] && return 1
+	case "$hdir" in
+	/*) ;;
+	*) hdir="$DIR/$hdir" ;;
+	esac
+	echo "$hdir"
+}
+
 #==============
 # Uninstall
 #==============
@@ -69,16 +86,7 @@ if [ "$1" = "--uninstall" ]; then
 	unlink_one "$HOME/.tmux/termenv/modules/agent.conf" "$DIR/tmux/modules/agent.conf"
 
 	# Pre-commit hook
-	if command -v git >/dev/null 2>&1 && git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1; then
-		HOOKS_DIR="$(git -C "$DIR" rev-parse --git-path hooks 2>/dev/null || true)"
-		if [ -n "$HOOKS_DIR" ]; then
-			case "$HOOKS_DIR" in
-			/*) ;;
-			*) HOOKS_DIR="$DIR/$HOOKS_DIR" ;;
-			esac
-			unlink_one "$HOOKS_DIR/pre-commit" "$DIR/hooks/pre-commit"
-		fi
-	fi
+	HOOKS_DIR="$(_resolve_hooks_dir)" && unlink_one "$HOOKS_DIR/pre-commit" "$DIR/hooks/pre-commit"
 
 	rmdir "$HOME/.vim/termenv/modules" "$HOME/.vim/termenv/platform" "$HOME/.vim/termenv" 2>/dev/null || true
 	rmdir "$HOME/.tmux/termenv/modules" "$HOME/.tmux/termenv/platform" "$HOME/.tmux/termenv" 2>/dev/null || true
@@ -160,16 +168,7 @@ for entry in "${SYMLINKS[@]}"; do
 done
 
 # Install pre-commit hook (only if this is a Git repository)
-if command -v git >/dev/null 2>&1 && git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1; then
-	HOOKS_DIR="$(git -C "$DIR" rev-parse --git-path hooks 2>/dev/null || true)"
-	if [ -n "$HOOKS_DIR" ]; then
-		case "$HOOKS_DIR" in
-		/*) ;; # absolute path, leave as is
-		*) HOOKS_DIR="$DIR/$HOOKS_DIR" ;;
-		esac
-		link_one "$HOOKS_DIR/pre-commit" "$DIR/hooks/pre-commit"
-	fi
-fi
+HOOKS_DIR="$(_resolve_hooks_dir)" && link_one "$HOOKS_DIR/pre-commit" "$DIR/hooks/pre-commit"
 
 # Create default termenv.conf
 if [ ! -f "$HOME/.termenv.conf" ]; then

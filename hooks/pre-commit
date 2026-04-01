@@ -12,6 +12,7 @@ trap 'rm -rf "$STAGED_DIR"' EXIT
 # common.sh excluded from shfmt (polyglot bash/zsh), zshrc excluded from both
 SHELLCHECK_FILES=()
 SHFMT_FILES=()
+errors=0
 
 while IFS= read -r -d '' file; do
 	case "$file" in
@@ -23,7 +24,8 @@ while IFS= read -r -d '' file; do
 	tmp_path="$STAGED_DIR/$file"
 	mkdir -p "$(dirname "$tmp_path")"
 	if ! git show ":$file" >"$tmp_path"; then
-		echo "Failed to read staged contents for $file" >&2
+		echo "ERROR: Failed to read staged contents for $file" >&2
+		errors=1
 		continue
 	fi
 
@@ -36,9 +38,7 @@ while IFS= read -r -d '' file; do
 	esac
 done < <(git diff --cached --name-only -z --diff-filter=ACMR)
 
-[ ${#SHELLCHECK_FILES[@]} -eq 0 ] && [ ${#SHFMT_FILES[@]} -eq 0 ] && exit 0
-
-errors=0
+[ ${#SHELLCHECK_FILES[@]} -eq 0 ] && [ ${#SHFMT_FILES[@]} -eq 0 ] && [ "$errors" -eq 0 ] && exit 0
 
 # ShellCheck
 if command -v shellcheck &>/dev/null; then
