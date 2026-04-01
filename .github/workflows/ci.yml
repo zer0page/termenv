@@ -24,9 +24,9 @@ jobs:
           chmod +x /tmp/shfmt
           sudo mv /tmp/shfmt /usr/local/bin/shfmt
       - name: ShellCheck
-        run: shellcheck install.sh platform.sh shell/common.sh shared/colors.sh agent/setup.sh shell/bashrc
+        run: shellcheck install.sh platform.sh shell/common.sh shared/colors.sh agent/setup.sh shell/bashrc hooks/pre-commit
       - name: shfmt
-        run: shfmt -d -ln bash install.sh platform.sh shared/colors.sh agent/setup.sh shell/bashrc
+        run: shfmt -d -ln bash install.sh platform.sh shared/colors.sh agent/setup.sh shell/bashrc hooks/pre-commit
 
   syntax:
     runs-on: ubuntu-24.04
@@ -42,6 +42,7 @@ jobs:
           bash -n shell/bashrc
           bash -n shared/colors.sh
           bash -n agent/setup.sh
+          bash -n hooks/pre-commit
       - name: Zsh syntax check
         run: zsh -n shell/zshrc
 

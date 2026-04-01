@@ -149,6 +149,10 @@ done
 if command -v git >/dev/null 2>&1 && git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1; then
 	HOOKS_DIR="$(git -C "$DIR" rev-parse --git-path hooks 2>/dev/null || true)"
 	if [ -n "$HOOKS_DIR" ]; then
+		case "$HOOKS_DIR" in
+		/*) ;; # absolute path, leave as is
+		*) HOOKS_DIR="$DIR/$HOOKS_DIR" ;;
+		esac
 		link_one "$HOOKS_DIR/pre-commit" "$DIR/hooks/pre-commit"
 	fi
 fi
