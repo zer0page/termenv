@@ -6,7 +6,12 @@
 set -eo pipefail
 
 if [ "$1" = "--uninstall" ]; then
-	echo "Agent tooling uninstall is not supported — remove Claude Code and Prism manually if desired."
+	echo "Uninstalling agent tooling..."
+	SKILLS_REPO="$HOME/.claude/claude-skills"
+	if [ -x "$SKILLS_REPO/install" ]; then
+		"$SKILLS_REPO/install" --uninstall
+	fi
+	echo "  Remove Claude Code and Prism manually if desired."
 	exit 0
 fi
 
@@ -36,5 +41,16 @@ if curl -fsSL https://raw.githubusercontent.com/himattm/prism/main/install.sh -o
 else
 	echo "  WARNING: Failed to download Prism installer — install manually: https://github.com/himattm/prism"
 fi
+
+# Install claude-skills (shared Claude Code skills)
+SKILLS_REPO="$HOME/.claude/claude-skills"
+if [ -d "$SKILLS_REPO/.git" ]; then
+	echo "  Updating claude-skills..."
+	git -C "$SKILLS_REPO" pull --quiet
+else
+	echo "  Cloning claude-skills..."
+	git clone --quiet https://github.com/zer0page/claude-skills.git "$SKILLS_REPO"
+fi
+"$SKILLS_REPO/install"
 
 echo "Agent tooling setup complete!"
