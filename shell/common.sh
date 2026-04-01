@@ -48,10 +48,9 @@ elif [ "$TERMENV_OS" = "linux" ]; then
   alias la='ls -al'
 fi
 
-# History — large (1M lines)
+# History — large (1M lines), use each shell's default HISTFILE
 export HISTSIZE=1000000
 export SAVEHIST=1000000
-export HISTFILE=~/.shell_history
 
 # bat (better cat)
 if command -v bat &>/dev/null; then
