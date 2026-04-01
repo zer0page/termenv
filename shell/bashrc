@@ -42,8 +42,9 @@ PS1='\u@\h:\w${__TERMENV_GIT_BRANCH}\$ '
 
 # fzf keybindings (Ctrl+R history, Ctrl+T files, Alt+C cd)
 if command -v fzf &>/dev/null; then
-	# shellcheck disable=SC2072  # intentional lexicographic string comparison
-	if [[ "$(fzf --version 2>/dev/null | cut -d. -f1-2)" > "0.47" ]]; then
+	fzf_ver="$(fzf --version 2>/dev/null | awk '{print $1}')"
+	IFS=. read -r fzf_major fzf_minor _ <<<"$fzf_ver"
+	if ((fzf_major > 0 || (fzf_major == 0 && fzf_minor >= 48))); then
 		eval "$(fzf --bash)"
 	elif [ -f /opt/homebrew/opt/fzf/shell/key-bindings.bash ]; then
 		source /opt/homebrew/opt/fzf/shell/key-bindings.bash

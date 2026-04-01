@@ -20,7 +20,10 @@ jobs:
           sudo apt-get install -y -q shellcheck
           # Install shfmt (not in apt)
           SHFMT_VERSION=v3.13.0
-          curl -fsSL "https://github.com/mvdan/sh/releases/download/${SHFMT_VERSION}/shfmt_${SHFMT_VERSION}_linux_amd64" -o /tmp/shfmt
+          SHFMT_URL="https://github.com/mvdan/sh/releases/download/${SHFMT_VERSION}"
+          curl -fsSL "${SHFMT_URL}/shfmt_${SHFMT_VERSION}_linux_amd64" -o /tmp/shfmt
+          curl -fsSL "${SHFMT_URL}/shfmt_${SHFMT_VERSION}_checksums.txt" -o /tmp/shfmt_checksums.txt
+          (cd /tmp && grep "shfmt_${SHFMT_VERSION}_linux_amd64" shfmt_checksums.txt | sha256sum -c -)
           chmod +x /tmp/shfmt
           sudo mv /tmp/shfmt /usr/local/bin/shfmt
       - name: ShellCheck

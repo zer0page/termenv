@@ -16,7 +16,7 @@ SHFMT_FILES=()
 while IFS= read -r -d '' file; do
 	case "$file" in
 	shell/zshrc) continue ;; # no bash tool supports zsh
-	shell/common.sh | *.sh | shell/bashrc) ;;
+	shell/common.sh | *.sh | shell/bashrc | hooks/pre-commit) ;;
 	*) continue ;;
 	esac
 
