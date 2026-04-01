@@ -53,10 +53,13 @@ if command -v git &>/dev/null; then
 		echo "  WARNING: $SKILLS_REPO exists but is not a git repo; skipping claude-skills"
 	else
 		echo "  Cloning claude-skills..."
-		git clone --quiet https://github.com/zer0page/claude-skills.git "$SKILLS_REPO"
+		if ! git clone --quiet https://github.com/zer0page/claude-skills.git "$SKILLS_REPO"; then
+			echo "  WARNING: claude-skills clone failed; skipping"
+			rm -rf "$SKILLS_REPO"
+		fi
 	fi
 	if [ -x "$SKILLS_REPO/install" ]; then
-		"$SKILLS_REPO/install"
+		"$SKILLS_REPO/install" || echo "  WARNING: claude-skills install failed; continuing"
 	else
 		echo "  WARNING: claude-skills install script not found; skipping"
 	fi
