@@ -51,6 +51,7 @@ if command -v fzf &>/dev/null; then
 	elif [ -f /usr/share/fzf/key-bindings.bash ]; then
 		source /usr/share/fzf/key-bindings.bash
 	fi
+	unset fzf_ver fzf_major fzf_minor
 fi
 
 # zoxide (autojump replacement, uses 'j' command)
