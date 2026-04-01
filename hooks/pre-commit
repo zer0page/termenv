@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# termenv pre-commit hook — runs ShellCheck + shfmt on staged content of shell files
+
+set -e
+
+# Materialize staged file contents into a temp directory so we lint
+# exactly what is being committed, not the working tree
+STAGED_DIR="$(mktemp -d "${TMPDIR:-/tmp}/pre-commit-shell-XXXXXX")"
+trap 'rm -rf "$STAGED_DIR"' EXIT
+
+# Files eligible for linting (bash-compatible only)
+# common.sh excluded from shfmt (polyglot bash/zsh), zshrc excluded from both
+SHELLCHECK_FILES=()
+SHFMT_FILES=()
+errors=0
+
+while IFS= read -r -d '' file; do
+	case "$file" in
+	shell/zshrc) continue ;; # no bash tool supports zsh
+	shell/common.sh | *.sh | shell/bashrc | hooks/pre-commit) ;;
+	*) continue ;;
+	esac
+
+	tmp_path="$STAGED_DIR/$file"
+	mkdir -p "$(dirname "$tmp_path")"
+	if ! git show ":$file" >"$tmp_path"; then
+		echo "ERROR: Failed to read staged contents for $file" >&2
+		errors=1
+		continue
+	fi
+
+	case "$file" in
+	shell/common.sh) SHELLCHECK_FILES+=("$tmp_path") ;; # lint only, skip formatter
+	*)
+		SHELLCHECK_FILES+=("$tmp_path")
+		SHFMT_FILES+=("$tmp_path")
+		;;
+	esac
+done < <(git diff --cached --name-only -z --diff-filter=ACMR)
+
+[ ${#SHELLCHECK_FILES[@]} -eq 0 ] && [ ${#SHFMT_FILES[@]} -eq 0 ] && [ "$errors" -eq 0 ] && exit 0
+
+# ShellCheck
+if command -v shellcheck &>/dev/null; then
+	if ! shellcheck "${SHELLCHECK_FILES[@]}"; then
+		errors=1
+	fi
+elif [ ${#SHELLCHECK_FILES[@]} -gt 0 ]; then
+	echo "WARNING: shellcheck not installed, skipping lint checks" >&2
+	echo "  See https://github.com/koalaman/shellcheck#installing" >&2
+fi
+
+# shfmt
+if command -v shfmt &>/dev/null; then
+	if [ ${#SHFMT_FILES[@]} -gt 0 ] && ! shfmt -d -ln bash "${SHFMT_FILES[@]}"; then
+		echo "Formatting errors found. Run: shfmt -w -ln bash <file>" >&2
+		errors=1
+	fi
+elif [ ${#SHFMT_FILES[@]} -gt 0 ]; then
+	echo "WARNING: shfmt not installed, skipping format checks" >&2
+	echo "  See https://github.com/mvdan/sh#shfmt" >&2
+fi
+
+exit "$errors"

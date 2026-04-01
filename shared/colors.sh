@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034  # exported for tmux/vim
 # Shared color palette constants for termenv
 # These map to the seoul256-inspired palette used across vim and tmux
 
