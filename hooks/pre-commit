@@ -47,7 +47,7 @@ if command -v shellcheck &>/dev/null; then
 	fi
 elif [ ${#SHELLCHECK_FILES[@]} -gt 0 ]; then
 	echo "WARNING: shellcheck not installed, skipping lint checks" >&2
-	echo "  Install with: brew install shellcheck" >&2
+	echo "  See https://github.com/koalaman/shellcheck#installing" >&2
 fi
 
 # shfmt
@@ -58,7 +58,7 @@ if command -v shfmt &>/dev/null; then
 	fi
 elif [ ${#SHFMT_FILES[@]} -gt 0 ]; then
 	echo "WARNING: shfmt not installed, skipping format checks" >&2
-	echo "  Install with: brew install shfmt" >&2
+	echo "  See https://github.com/mvdan/sh#shfmt" >&2
 fi
 
 exit "$errors"

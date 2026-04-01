@@ -110,7 +110,7 @@ __git_branch() {
 # Aliases
 alias vi='vim'
 alias gcan='git commit --amend --no-edit'
-# shellcheck disable=SC2262
+# shellcheck disable=SC2262  # alias may not exist; failure sent to /dev/null
 unalias yolo 2>/dev/null
 yolo() {
   command claude --dangerously-skip-permissions "$@"

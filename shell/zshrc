@@ -29,9 +29,8 @@ PROMPT='%n@%m:%~${__TERMENV_GIT_BRANCH}%# '
 # fzf keybindings (Ctrl+R history, Ctrl+T files, Alt+C cd)
 if command -v fzf &>/dev/null; then
   # fzf 0.48+ ships a built-in init; older versions use shell scripts
-  local fzf_ver="$(fzf --version 2>/dev/null | awk '{print $1}')"
-  local fzf_major fzf_minor
-  IFS=. read -r fzf_major fzf_minor _ <<<"$fzf_ver"
+  fzf_ver="$(fzf --version 2>/dev/null | awk '{print $1}')"
+  IFS=. read -r fzf_major fzf_minor _ <<< "$fzf_ver"
   if (( fzf_major > 0 || (fzf_major == 0 && fzf_minor >= 48) )); then
     source <(fzf --zsh)
   elif [ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ]; then
@@ -39,6 +38,7 @@ if command -v fzf &>/dev/null; then
   elif [ -f /usr/share/fzf/key-bindings.zsh ]; then
     source /usr/share/fzf/key-bindings.zsh
   fi
+  unset fzf_ver fzf_major fzf_minor
 fi
 
 # zoxide (autojump replacement, uses 'j' command)
