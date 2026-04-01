@@ -1,0 +1,146 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q shellcheck
+          # Install shfmt (not in apt)
+          SHFMT_VERSION=v3.13.0
+          curl -fsSL "https://github.com/mvdan/sh/releases/download/${SHFMT_VERSION}/shfmt_${SHFMT_VERSION}_linux_amd64" -o /usr/local/bin/shfmt
+          chmod +x /usr/local/bin/shfmt
+      - name: ShellCheck
+        run: shellcheck install.sh platform.sh shell/common.sh shared/colors.sh agent/setup.sh shell/bashrc
+      - name: shfmt
+        run: shfmt -d -ln bash install.sh platform.sh shared/colors.sh agent/setup.sh shell/bashrc
+
+  syntax:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install zsh
+        run: sudo apt-get update -q && sudo apt-get install -y -q zsh
+      - name: Bash syntax check
+        run: |
+          bash -n install.sh
+          bash -n platform.sh
+          bash -n shell/common.sh
+          bash -n shell/bashrc
+          bash -n shared/colors.sh
+          bash -n agent/setup.sh
+      - name: Zsh syntax check
+        run: zsh -n shell/zshrc
+
+  symlink-targets:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Verify all symlink targets exist in repo
+        run: |
+          errors=0
+          while IFS= read -r relpath; do
+            [ -z "$relpath" ] && continue
+            if [ ! -f "$relpath" ]; then
+              echo "::error::MISSING: $relpath (referenced in SYMLINKS array)"
+              errors=$((errors + 1))
+            fi
+          done < <(grep -oP '\$DIR/\K[^"]+' install.sh)
+          if [ "$errors" -gt 0 ]; then
+            exit 1
+          fi
+          echo "All symlink targets verified."
+
+  install-roundtrip:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install zsh (Linux only)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -q && sudo apt-get install -y -q zsh
+      - name: Install round-trip
+        run: |
+          export FAKE_HOME="$(mktemp -d)"
+          export HOME="$FAKE_HOME"
+          export TERMENV_CI=1
+
+          touch "$HOME/.zshrc" "$HOME/.bashrc"
+
+          # Install
+          echo "n" | ./install.sh
+
+          # Verify symlinks
+          errors=0
+          for link in \
+            "$HOME/.vimrc" \
+            "$HOME/.vim/termenv/plugins.vim" \
+            "$HOME/.vim/termenv/keys.vim" \
+            "$HOME/.tmux.conf" \
+            "$HOME/.tmux/termenv/keys.conf" \
+            "$HOME/.tmux/termenv/mouse.conf" \
+            "$HOME/.tmux/termenv/status.conf" \
+            "$HOME/.zsh/termenv/zshrc" \
+            "$HOME/.zsh/termenv/common.sh" \
+            "$HOME/.bash/termenv/bashrc" \
+            "$HOME/.bash/termenv/common.sh"; do
+            if [ ! -L "$link" ]; then
+              echo "::error::Missing symlink: $link"
+              errors=$((errors + 1))
+            fi
+          done
+          [ "$errors" -gt 0 ] && exit 1
+
+          # Verify source lines
+          grep -qF 'source ~/.zsh/termenv/zshrc' "$HOME/.zshrc" || { echo "::error::Missing source line in .zshrc"; exit 1; }
+          grep -qF 'source ~/.bash/termenv/bashrc' "$HOME/.bashrc" || { echo "::error::Missing source line in .bashrc"; exit 1; }
+
+          echo "Install verified."
+
+          # Idempotency — run again
+          echo "n" | ./install.sh
+
+          # Uninstall
+          ./install.sh --uninstall
+
+          # Verify symlinks removed
+          errors=0
+          for link in \
+            "$HOME/.vimrc" \
+            "$HOME/.vim/termenv/plugins.vim" \
+            "$HOME/.tmux.conf" \
+            "$HOME/.zsh/termenv/zshrc" \
+            "$HOME/.bash/termenv/bashrc"; do
+            if [ -L "$link" ]; then
+              echo "::error::Stale symlink: $link"
+              errors=$((errors + 1))
+            fi
+          done
+          [ "$errors" -gt 0 ] && exit 1
+
+          # Verify source lines removed
+          if grep -qF 'source ~/.zsh/termenv/zshrc' "$HOME/.zshrc"; then
+            echo "::error::Source line still in .zshrc after uninstall"
+            exit 1
+          fi
+          if grep -qF 'source ~/.bash/termenv/bashrc' "$HOME/.bashrc"; then
+            echo "::error::Source line still in .bashrc after uninstall"
+            exit 1
+          fi
+
+          echo "Round-trip passed: install -> verify -> reinstall -> uninstall -> clean."
+          rm -rf "$FAKE_HOME"

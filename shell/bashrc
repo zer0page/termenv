@@ -1,10 +1,11 @@
+# shellcheck shell=bash
 # termenv — bash extensions
 
 source ~/.bash/termenv/common.sh
 
 # Bash defaults
-shopt -s checkwinsize         # fix terminal size after resize
-shopt -s no_empty_cmd_completion  # don't tab-complete on empty line
+shopt -s checkwinsize            # fix terminal size after resize
+shopt -s no_empty_cmd_completion # don't tab-complete on empty line
 
 # Bash history — no duplicates, append on exit
 export HISTCONTROL=ignoredups:erasedups
@@ -12,44 +13,46 @@ shopt -s histappend
 
 # Git completion — try known locations across mac (homebrew) and linux distros
 if [ -f /opt/homebrew/etc/bash_completion.d/git-completion.bash ]; then
-  source /opt/homebrew/etc/bash_completion.d/git-completion.bash
+	source /opt/homebrew/etc/bash_completion.d/git-completion.bash
 elif [ -f /usr/local/etc/bash_completion.d/git-completion.bash ]; then
-  source /usr/local/etc/bash_completion.d/git-completion.bash
+	source /usr/local/etc/bash_completion.d/git-completion.bash
 elif [ -f /usr/share/bash-completion/completions/git ]; then
-  source /usr/share/bash-completion/completions/git
+	source /usr/share/bash-completion/completions/git
 elif [ -f /usr/lib/git-core/git-completion.bash ]; then
-  source /usr/lib/git-core/git-completion.bash
+	source /usr/lib/git-core/git-completion.bash
 elif [ -f /etc/bash_completion.d/git ]; then
-  source /etc/bash_completion.d/git
+	source /etc/bash_completion.d/git
 fi
 
 # Prompt with git branch — computed in PROMPT_COMMAND so $? is never clobbered
 __termenv_update_prompt() {
-  local _s=$?
-  __TERMENV_GIT_BRANCH="$(__git_branch)"
-  return $_s
+	local _s=$?
+	__TERMENV_GIT_BRANCH="$(__git_branch)"
+	return $_s
 }
 # Append to PROMPT_COMMAND so it runs last and its $? restore is the final state;
 # handle both array and string forms
 if declare -p PROMPT_COMMAND &>/dev/null && [[ "$(declare -p PROMPT_COMMAND 2>/dev/null)" == "declare -a"* ]]; then
-  PROMPT_COMMAND=("${PROMPT_COMMAND[@]}" __termenv_update_prompt)
+	PROMPT_COMMAND=("${PROMPT_COMMAND[@]}" __termenv_update_prompt)
 else
-  PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND;}__termenv_update_prompt"
+	# shellcheck disable=SC2178,SC2128  # only reached when PROMPT_COMMAND is a string
+	PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND;}__termenv_update_prompt"
 fi
 PS1='\u@\h:\w${__TERMENV_GIT_BRANCH}\$ '
 
 # fzf keybindings (Ctrl+R history, Ctrl+T files, Alt+C cd)
 if command -v fzf &>/dev/null; then
-  if [[ "$(fzf --version 2>/dev/null | cut -d. -f1-2)" > "0.47" ]]; then
-    eval "$(fzf --bash)"
-  elif [ -f /opt/homebrew/opt/fzf/shell/key-bindings.bash ]; then
-    source /opt/homebrew/opt/fzf/shell/key-bindings.bash
-  elif [ -f /usr/share/fzf/key-bindings.bash ]; then
-    source /usr/share/fzf/key-bindings.bash
-  fi
+	# shellcheck disable=SC2072  # intentional lexicographic string comparison
+	if [[ "$(fzf --version 2>/dev/null | cut -d. -f1-2)" > "0.47" ]]; then
+		eval "$(fzf --bash)"
+	elif [ -f /opt/homebrew/opt/fzf/shell/key-bindings.bash ]; then
+		source /opt/homebrew/opt/fzf/shell/key-bindings.bash
+	elif [ -f /usr/share/fzf/key-bindings.bash ]; then
+		source /usr/share/fzf/key-bindings.bash
+	fi
 fi
 
 # zoxide (autojump replacement, uses 'j' command)
 if command -v zoxide &>/dev/null; then
-  eval "$(zoxide init bash --cmd j)"
+	eval "$(zoxide init bash --cmd j)"
 fi

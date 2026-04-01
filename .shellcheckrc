@@ -1,0 +1,2 @@
+disable=SC1090   # Can't follow dynamic source
+disable=SC1091   # Source file not found (symlink targets)
