@@ -44,13 +44,22 @@ fi
 
 # Install claude-skills (shared Claude Code skills)
 SKILLS_REPO="$HOME/.claude/claude-skills"
-if [ -d "$SKILLS_REPO/.git" ]; then
-	echo "  Updating claude-skills..."
-	git -C "$SKILLS_REPO" pull --quiet
+if command -v git &>/dev/null; then
+	mkdir -p "$(dirname "$SKILLS_REPO")"
+	if [ -d "$SKILLS_REPO/.git" ]; then
+		echo "  Updating claude-skills..."
+		git -C "$SKILLS_REPO" pull --quiet
+	else
+		echo "  Cloning claude-skills..."
+		git clone --quiet https://github.com/zer0page/claude-skills.git "$SKILLS_REPO"
+	fi
+	if [ -x "$SKILLS_REPO/install" ]; then
+		"$SKILLS_REPO/install"
+	else
+		echo "  WARNING: claude-skills install script not found; skipping"
+	fi
 else
-	echo "  Cloning claude-skills..."
-	git clone --quiet https://github.com/zer0page/claude-skills.git "$SKILLS_REPO"
+	echo "  WARNING: git not found; skipping claude-skills install"
 fi
-"$SKILLS_REPO/install"
 
 echo "Agent tooling setup complete!"
