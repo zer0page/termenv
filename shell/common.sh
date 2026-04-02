@@ -20,6 +20,12 @@ fi
 source "$_TERMENV_DIR/../platform.sh"
 unset _TERMENV_DIR
 
+# Ensure ~/.local/bin is on PATH (used by curl-installed tools like just)
+case ":$PATH:" in
+  *:"$HOME/.local/bin":*) ;;
+  *) export PATH="$HOME/.local/bin${PATH+:$PATH}" ;;
+esac
+
 # Defaults
 export EDITOR=vim
 export VISUAL=vim
