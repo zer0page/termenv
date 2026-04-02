@@ -23,7 +23,7 @@ unset _TERMENV_DIR
 # Ensure ~/.local/bin is on PATH (used by curl-installed tools like just)
 case ":$PATH:" in
   *:"$HOME/.local/bin":*) ;;
-  *) export PATH="$HOME/.local/bin:$PATH" ;;
+  *) export PATH="$HOME/.local/bin${PATH+:$PATH}" ;;
 esac
 
 # Defaults
