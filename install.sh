@@ -155,9 +155,9 @@ if [ "${TERMENV_CI:-0}" != "1" ]; then
 	if ! command -v just &>/dev/null; then
 		echo "  Installing just via official installer..."
 		mkdir -p "$HOME/.local/bin"
-		curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh \
-			| bash -s -- --to "$HOME/.local/bin" \
-			|| echo "  WARNING: just install failed"
+		curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh |
+			bash -s -- --to "$HOME/.local/bin" ||
+			echo "  WARNING: just install failed"
 	fi
 
 	# Install vim-plug
