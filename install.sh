@@ -151,12 +151,13 @@ if [ "${TERMENV_CI:-0}" != "1" ]; then
 		done
 	fi
 
-	# just — curl fallback when package manager didn't have it
+	# just — not in default apt repos on most Debian/Ubuntu releases
 	if ! command -v just &>/dev/null; then
 		echo "  Installing just via official installer..."
 		mkdir -p "$HOME/.local/bin"
 		curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh \
-			| bash -s -- --to "$HOME/.local/bin"
+			| bash -s -- --to "$HOME/.local/bin" \
+			|| echo "  WARNING: just install failed"
 	fi
 
 	# Install vim-plug
