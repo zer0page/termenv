@@ -136,19 +136,27 @@ echo "Installing termenv ($TERMENV_OS)..."
 if [ "${TERMENV_CI:-0}" != "1" ]; then
 	# Install CLI tools
 	if command -v brew &>/dev/null; then
-		for tool in vim tmux zoxide bat fd git-delta lnav tig ripgrep fzf jq; do
+		for tool in vim tmux zoxide bat fd git-delta lnav tig ripgrep fzf jq just; do
 			if ! brew list "$tool" &>/dev/null; then
 				echo "  Installing $tool..."
 				brew install "$tool"
 			fi
 		done
 	elif command -v apt-get &>/dev/null; then
-		for tool in vim tmux zoxide bat fd-find git-delta lnav tig ripgrep fzf jq; do
+		for tool in vim tmux zoxide bat fd-find git-delta lnav tig ripgrep fzf jq just; do
 			if ! dpkg -s "$tool" &>/dev/null; then
 				echo "  Installing $tool (may need sudo)..."
 				sudo apt-get install -y "$tool" 2>/dev/null || echo "  Skipped $tool (not in apt)"
 			fi
 		done
+	fi
+
+	# just — curl fallback when package manager didn't have it
+	if ! command -v just &>/dev/null; then
+		echo "  Installing just via official installer..."
+		mkdir -p "$HOME/.local/bin"
+		curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh \
+			| bash -s -- --to "$HOME/.local/bin"
 	fi
 
 	# Install vim-plug
