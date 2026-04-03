@@ -122,7 +122,7 @@ alias gcan='git commit --amend --no-edit'
 # shellcheck disable=SC2262  # alias may not exist; failure sent to /dev/null
 unalias yolo 2>/dev/null
 yolo() {
-  local teammate_mode=true
+  local inject_teammate_mode=true
   local arg
   for arg in "$@"; do
     case "$arg" in
@@ -130,12 +130,12 @@ yolo() {
         break
         ;;
       --teammate-mode|--teammate-mode=*)
-        teammate_mode=false
+        inject_teammate_mode=false
         break
         ;;
     esac
   done
-  if "$teammate_mode"; then
+  if [ "$inject_teammate_mode" = "true" ]; then
     command claude --dangerously-skip-permissions --teammate-mode in-process "$@"
   else
     command claude --dangerously-skip-permissions "$@"
