@@ -122,7 +122,16 @@ alias gcan='git commit --amend --no-edit'
 # shellcheck disable=SC2262  # alias may not exist; failure sent to /dev/null
 unalias yolo 2>/dev/null
 yolo() {
-  command claude --dangerously-skip-permissions "$@"
+  local teammate_mode=true
+  local arg
+  for arg in "$@"; do
+    [ "$arg" = "--teammate-mode" ] && teammate_mode=false && break
+  done
+  if "$teammate_mode"; then
+    command claude --dangerously-skip-permissions --teammate-mode in-process "$@"
+  else
+    command claude --dangerously-skip-permissions "$@"
+  fi
 }
 
 # Auto-attach to tmux on interactive SSH login
