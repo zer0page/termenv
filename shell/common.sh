@@ -125,7 +125,15 @@ yolo() {
   local teammate_mode=true
   local arg
   for arg in "$@"; do
-    [ "$arg" = "--teammate-mode" ] && teammate_mode=false && break
+    case "$arg" in
+      --)
+        break
+        ;;
+      --teammate-mode|--teammate-mode=*)
+        teammate_mode=false
+        break
+        ;;
+    esac
   done
   if "$teammate_mode"; then
     command claude --dangerously-skip-permissions --teammate-mode in-process "$@"
