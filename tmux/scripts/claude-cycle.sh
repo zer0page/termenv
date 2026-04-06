@@ -78,25 +78,14 @@ done
 
 # Pick next or previous, wrapping around.
 count=${#waiting_panes[@]}
-if [ "$ACTION" = "prev" ]; then
-	if [ "$current_idx" -ge 0 ]; then
-		target_idx=$(((current_idx - 1 + count) % count))
-	else
-		target_idx=$((count - 1))
-	fi
-else
-	if [ "$current_idx" -ge 0 ]; then
-		target_idx=$(((current_idx + 1) % count))
-	else
-		target_idx=0
-	fi
-fi
+if [ "$ACTION" = "prev" ]; then step=-1; else step=1; fi
+target_idx=$(((current_idx + step + count) % count))
 
 TARGET_PANE="${waiting_panes[$target_idx]}"
 
-# Nothing to do if target is already current.
+# Nothing to do if target wrapped back to current.
 if [ "$TARGET_PANE" = "$CURRENT_PANE" ]; then
-	tmux display-message "Already at the only idle Claude session"
+	tmux display-message "No other idle Claude sessions"
 	exit 0
 fi
 
