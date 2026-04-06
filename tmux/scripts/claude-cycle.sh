@@ -144,10 +144,12 @@ if [ "$TARGET_PANE" = "$CURRENT_PANE" ]; then
 	exit 0
 fi
 
-# Zoom handling: unzoom current pane if zoomed.
-current_zoomed=$(tmux display-message -p '#{window_zoomed_flag}' 2>/dev/null) || true
-if [ "$current_zoomed" = "1" ]; then
-	tmux resize-pane -Z 2>/dev/null || true
+# Zoom handling: unzoom current pane before switching (only when autozoom enabled).
+if [ "$AUTOZOOM" = "1" ]; then
+	current_zoomed=$(tmux display-message -p '#{window_zoomed_flag}' 2>/dev/null) || true
+	if [ "$current_zoomed" = "1" ]; then
+		tmux resize-pane -Z 2>/dev/null || true
+	fi
 fi
 
 # Switch to the target pane (select-pane handles cross-window within a session).
