@@ -8,7 +8,7 @@
 # (installed automatically by agent/setup.sh via claude-skills).
 #
 # Configuration (tmux global options):
-#   @claude_cycle_scope    — "all" (default) or "window" (current window only)
+#   @claude_cycle_scope    — "all" (default, all windows in session) or "window"
 #   @claude_cycle_autozoom — "1" (default) auto-zoom target, "0" to disable
 #
 # Usage (called by tmux keybinding, not directly):
@@ -20,6 +20,13 @@ set -euo pipefail
 [ -n "${TMUX_PANE:-}" ] || exit 0
 
 ACTION="${1:-next}"
+case "$ACTION" in
+next | prev) ;;
+*)
+	tmux display-message "Invalid claude-cycle action: $ACTION (expected: next or prev)"
+	exit 1
+	;;
+esac
 
 # Read configuration.
 SCOPE=$(tmux show-option -gqv @claude_cycle_scope 2>/dev/null) || true
@@ -35,7 +42,7 @@ pane_fmt='#{pane_id} #{@claude_waiting} #{pane_pid} #{pane_current_command}'
 if [ "$SCOPE" = "window" ]; then
 	pane_data=$(tmux list-panes -F "$pane_fmt" 2>/dev/null) || exit 0
 else
-	pane_data=$(tmux list-panes -a -F "$pane_fmt" 2>/dev/null) || exit 0
+	pane_data=$(tmux list-panes -s -F "$pane_fmt" 2>/dev/null) || exit 0
 fi
 
 # Filter to panes marked as waiting.
@@ -104,8 +111,7 @@ if [ "$current_zoomed" = "1" ]; then
 	tmux resize-pane -Z 2>/dev/null || true
 fi
 
-# Switch to target pane (select its window first for cross-window support).
-tmux select-window -t "$TARGET_PANE" 2>/dev/null || true
+# Switch to the target pane (select-pane handles cross-window within a session).
 tmux select-pane -t "$TARGET_PANE" 2>/dev/null || {
 	tmux display-message "Failed to switch to idle Claude pane"
 	exit 1
