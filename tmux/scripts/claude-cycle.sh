@@ -9,10 +9,10 @@
 #
 # Configuration (tmux global options):
 #   @claude_cycle_scope    — "all" (default, all windows in session) or "window"
-#   @claude_cycle_autozoom — "1" (default) auto-zoom target, "0" to disable
+#   @claude_cycle_autozoom — "0" (default) no auto-zoom, "1" to enable
 #
 # Usage (called by tmux keybinding, not directly):
-#   claude-cycle.sh next    (bound to C-\)
+#   claude-cycle.sh next    (bound to C-Space)
 #   claude-cycle.sh prev    (available if keybinding added)
 set -euo pipefail
 
@@ -32,7 +32,7 @@ esac
 SCOPE=$(tmux show-option -gqv @claude_cycle_scope 2>/dev/null) || true
 SCOPE="${SCOPE:-all}"
 AUTOZOOM=$(tmux show-option -gqv @claude_cycle_autozoom 2>/dev/null) || true
-AUTOZOOM="${AUTOZOOM:-1}"
+AUTOZOOM="${AUTOZOOM:-0}"
 
 # Current pane info.
 CURRENT_PANE="$TMUX_PANE"
