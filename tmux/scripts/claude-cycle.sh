@@ -30,23 +30,24 @@ AUTOZOOM="${AUTOZOOM:-1}"
 # Current pane info.
 CURRENT_PANE="$TMUX_PANE"
 
-# Collect candidate panes (id, @claude_waiting, pane_pid in one call).
+# Collect candidate panes (id, @claude_waiting, pane_pid, command in one call).
+pane_fmt='#{pane_id} #{@claude_waiting} #{pane_pid} #{pane_current_command}'
 if [ "$SCOPE" = "window" ]; then
-	pane_data=$(tmux list-panes -F '#{pane_id} #{@claude_waiting} #{pane_pid}' 2>/dev/null) || exit 0
+	pane_data=$(tmux list-panes -F "$pane_fmt" 2>/dev/null) || exit 0
 else
-	pane_data=$(tmux list-panes -a -F '#{pane_id} #{@claude_waiting} #{pane_pid}' 2>/dev/null) || exit 0
+	pane_data=$(tmux list-panes -a -F "$pane_fmt" 2>/dev/null) || exit 0
 fi
 
 # Filter to panes marked as waiting.
 waiting_panes=()
-while IFS=' ' read -r pane_id waiting pane_pid; do
+while IFS=' ' read -r pane_id waiting pane_pid pane_cmd; do
 	[ "$waiting" = "1" ] || continue
 
 	# Validate pane_id format.
 	[[ "$pane_id" =~ ^%[0-9]+$ ]] || continue
 
-	# Verify a claude process is actually running in this pane.
-	if ! pgrep -x claude -P "$pane_pid" >/dev/null 2>&1; then
+	# Verify a claude process is running (as child or as the pane command itself).
+	if [ "$pane_cmd" != "claude" ] && ! pgrep -x claude -P "$pane_pid" >/dev/null 2>&1; then
 		# Stale flag — clear it and skip.
 		tmux set-option -p -t "$pane_id" -u @claude_waiting 2>/dev/null || true
 		continue
@@ -110,7 +111,10 @@ tmux select-pane -t "$TARGET_PANE" 2>/dev/null || {
 	exit 1
 }
 
-# Auto-zoom the target pane.
+# Auto-zoom the target pane (only if not already zoomed in target window).
 if [ "$AUTOZOOM" = "1" ]; then
-	tmux resize-pane -Z -t "$TARGET_PANE" 2>/dev/null || true
+	target_zoomed=$(tmux display-message -p '#{window_zoomed_flag}' 2>/dev/null) || true
+	if [ "$target_zoomed" != "1" ]; then
+		tmux resize-pane -Z -t "$TARGET_PANE" 2>/dev/null || true
+	fi
 fi
