@@ -45,7 +45,8 @@ else
 	pane_data=$(tmux list-panes -s -F "$pane_fmt" 2>/dev/null) || exit 0
 fi
 
-# Strip the applied marker from a window name. Prints stripped name or empty if no match.
+# If a stored marker matches the current window name, remove it from the name
+# and clear the corresponding @claude_applied_* window options.
 strip_window_marker() {
 	local win="$1"
 	local marker position name marker_len stripped
@@ -78,16 +79,21 @@ while IFS=' ' read -r pane_id waiting pane_pid pane_cmd; do
 
 	# Verify a claude process is running (as child or as the pane command itself).
 	if [ "$pane_cmd" != "claude" ] && ! pgrep -x claude -P "$pane_pid" >/dev/null 2>&1; then
-		# Stale flag — clear it and clean up the window marker if needed.
-		tmux set-option -p -t "$pane_id" @claude_waiting 0 2>/dev/null || true
+		# Stale flag — unset it and clean up the window marker if needed.
+		tmux set-option -pu -t "$pane_id" @claude_waiting 2>/dev/null || true
 
 		win=$(tmux display-message -t "$pane_id" -p '#{window_id}' 2>/dev/null) || true
-		if [ -n "$win" ] && [[ "$cleaned_windows" != *"$win"* ]]; then
-			others=$(tmux list-panes -t "$win" -F '#{@claude_waiting}' 2>/dev/null) || true
-			if ! echo "$others" | grep -qxF '1'; then
-				strip_window_marker "$win"
-				cleaned_windows="$cleaned_windows $win"
-			fi
+		if [ -n "$win" ]; then
+			case " $cleaned_windows " in
+				*" $win "*) ;;
+				*)
+					others=$(tmux list-panes -t "$win" -F '#{@claude_waiting}' 2>/dev/null) || true
+					if ! echo "$others" | grep -qxF '1'; then
+						strip_window_marker "$win"
+						cleaned_windows="$cleaned_windows $win"
+					fi
+					;;
+			esac
 		fi
 
 		continue
