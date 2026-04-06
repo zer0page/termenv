@@ -238,6 +238,7 @@ if [ "${TERMENV_CI:-0}" != "1" ]; then
 		link_one "$HOME/.vim/termenv/modules/agent.vim" "$DIR/vim/modules/agent.vim"
 		link_one "$HOME/.tmux/termenv/modules/agent.conf" "$DIR/tmux/modules/agent.conf"
 		link_one "$HOME/.tmux/termenv/scripts/claude-cycle.sh" "$DIR/tmux/scripts/claude-cycle.sh"
+		echo "  Tip: C-. cycles to next idle Claude session, C-, to previous"
 		"$DIR/agent/setup.sh"
 	else
 		echo "  Skipped agent setup"

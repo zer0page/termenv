@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # termenv — Cycle to the next/previous idle Claude Code pane.
 #
-# Reads the per-pane @claude_waiting variable (set by tmux-notify.sh hook)
-# to find panes where Claude Code is waiting for user input.
+# Reads the per-pane @claude_waiting variable (set by tmux-notify.sh hook
+# from claude-skills) to find panes where Claude Code is waiting for input.
+#
+# Requires: tmux-notify.sh hooks installed in Claude Code settings.json
+# (installed automatically by agent/setup.sh via claude-skills).
 #
 # Configuration (tmux global options):
 #   @claude_cycle_scope    — "all" (default) or "window" (current window only)
@@ -27,20 +30,22 @@ AUTOZOOM="${AUTOZOOM:-1}"
 # Current pane info.
 CURRENT_PANE="$TMUX_PANE"
 
-# Collect candidate panes (id and @claude_waiting value).
+# Collect candidate panes (id, @claude_waiting, pane_pid in one call).
 if [ "$SCOPE" = "window" ]; then
-	pane_data=$(tmux list-panes -F '#{pane_id} #{@claude_waiting}' 2>/dev/null) || exit 0
+	pane_data=$(tmux list-panes -F '#{pane_id} #{@claude_waiting} #{pane_pid}' 2>/dev/null) || exit 0
 else
-	pane_data=$(tmux list-panes -a -F '#{pane_id} #{@claude_waiting}' 2>/dev/null) || exit 0
+	pane_data=$(tmux list-panes -a -F '#{pane_id} #{@claude_waiting} #{pane_pid}' 2>/dev/null) || exit 0
 fi
 
 # Filter to panes marked as waiting.
 waiting_panes=()
-while IFS=' ' read -r pane_id waiting; do
+while IFS=' ' read -r pane_id waiting pane_pid; do
 	[ "$waiting" = "1" ] || continue
 
+	# Validate pane_id format.
+	[[ "$pane_id" =~ ^%[0-9]+$ ]] || continue
+
 	# Verify a claude process is actually running in this pane.
-	pane_pid=$(tmux display-message -t "$pane_id" -p '#{pane_pid}' 2>/dev/null) || continue
 	if ! pgrep -x claude -P "$pane_pid" >/dev/null 2>&1; then
 		# Stale flag — clear it and skip.
 		tmux set-option -p -t "$pane_id" -u @claude_waiting 2>/dev/null || true
@@ -58,7 +63,7 @@ fi
 
 # Only one idle pane and it's the current one.
 if [ ${#waiting_panes[@]} -eq 1 ] && [ "${waiting_panes[0]}" = "$CURRENT_PANE" ]; then
-	tmux display-message "No other idle Claude sessions"
+	tmux display-message "Already at the only idle Claude session"
 	exit 0
 fi
 
@@ -91,7 +96,7 @@ TARGET_PANE="${waiting_panes[$target_idx]}"
 
 # Nothing to do if target is already current.
 if [ "$TARGET_PANE" = "$CURRENT_PANE" ]; then
-	tmux display-message "No other idle Claude sessions"
+	tmux display-message "Already at the only idle Claude session"
 	exit 0
 fi
 
@@ -103,7 +108,10 @@ fi
 
 # Switch to target pane (handles cross-window switching).
 tmux switch-client -t "$TARGET_PANE" 2>/dev/null ||
-	tmux select-pane -t "$TARGET_PANE" 2>/dev/null || exit 0
+	tmux select-pane -t "$TARGET_PANE" 2>/dev/null || {
+	tmux display-message "Failed to switch to idle Claude pane"
+	exit 1
+}
 
 # Auto-zoom the target pane.
 if [ "$AUTOZOOM" = "1" ]; then
