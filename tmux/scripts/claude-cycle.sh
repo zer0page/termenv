@@ -12,7 +12,7 @@
 #   @claude_cycle_autozoom — "0" (default) no auto-zoom, "1" to enable
 #
 # Usage (called by tmux keybinding, not directly):
-#   claude-cycle.sh next    (bound to C-Space)
+#   claude-cycle.sh next    (bound to C-y)
 #   claude-cycle.sh prev    (available if keybinding added)
 set -euo pipefail
 
@@ -152,8 +152,8 @@ if [ "$AUTOZOOM" = "1" ]; then
 	fi
 fi
 
-# Switch to the target pane (select-pane handles cross-window within a session).
-tmux select-pane -t "$TARGET_PANE" 2>/dev/null || {
+# Switch to the target pane (switch-client handles cross-window within a session).
+tmux switch-client -t "$TARGET_PANE" 2>/dev/null || {
 	tmux display-message "Failed to switch to idle Claude pane"
 	exit 1
 }
