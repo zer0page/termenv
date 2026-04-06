@@ -78,8 +78,16 @@ done
 
 # Pick next or previous, wrapping around.
 count=${#waiting_panes[@]}
-if [ "$ACTION" = "prev" ]; then step=-1; else step=1; fi
-target_idx=$(((current_idx + step + count) % count))
+if [ "$current_idx" -eq -1 ]; then
+	if [ "$ACTION" = "prev" ]; then
+		target_idx=$((count - 1))
+	else
+		target_idx=0
+	fi
+else
+	if [ "$ACTION" = "prev" ]; then step=-1; else step=1; fi
+	target_idx=$(((current_idx + step + count) % count))
+fi
 
 TARGET_PANE="${waiting_panes[$target_idx]}"
 
@@ -95,9 +103,9 @@ if [ "$current_zoomed" = "1" ]; then
 	tmux resize-pane -Z 2>/dev/null || true
 fi
 
-# Switch to target pane (handles cross-window switching).
-tmux switch-client -t "$TARGET_PANE" 2>/dev/null ||
-	tmux select-pane -t "$TARGET_PANE" 2>/dev/null || {
+# Switch to target pane (select its window first for cross-window support).
+tmux select-window -t "$TARGET_PANE" 2>/dev/null || true
+tmux select-pane -t "$TARGET_PANE" 2>/dev/null || {
 	tmux display-message "Failed to switch to idle Claude pane"
 	exit 1
 }
