@@ -12,8 +12,8 @@
 #   @claude_cycle_autozoom — "1" (default) auto-zoom target, "0" to disable
 #
 # Usage (called by tmux keybinding, not directly):
-#   claude-cycle.sh next
-#   claude-cycle.sh prev
+#   claude-cycle.sh next    (bound to C-\)
+#   claude-cycle.sh prev    (available if keybinding added)
 set -euo pipefail
 
 # Guard: silently exit if not running inside tmux.
@@ -45,8 +45,32 @@ else
 	pane_data=$(tmux list-panes -s -F "$pane_fmt" 2>/dev/null) || exit 0
 fi
 
+# If a stored marker matches the current window name, remove it from the name
+# and clear the corresponding @claude_applied_* window options.
+strip_window_marker() {
+	local win="$1"
+	local marker position name marker_len stripped
+	marker=$(tmux show-option -wqv -t "$win" @claude_applied_marker 2>/dev/null) || return 0
+	[ -n "$marker" ] || return 0
+	position=$(tmux show-option -wqv -t "$win" @claude_applied_position 2>/dev/null) || true
+	name=$(tmux display-message -t "$win" -p '#{window_name}' 2>/dev/null) || return 0
+	marker_len=${#marker}
+
+	if [ "$position" = "append" ] && [ "${name: -marker_len}" = "$marker" ]; then
+		stripped="${name:0:${#name}-marker_len}"
+	elif [ "${name:0:marker_len}" = "$marker" ]; then
+		stripped="${name:marker_len}"
+	fi
+	[ -n "$stripped" ] || return 0
+
+	tmux rename-window -t "$win" -- "$stripped" 2>/dev/null || true
+	tmux set-option -wu -t "$win" @claude_applied_marker 2>/dev/null || true
+	tmux set-option -wu -t "$win" @claude_applied_position 2>/dev/null || true
+}
+
 # Filter to panes marked as waiting.
 waiting_panes=()
+cleaned_windows=""
 while IFS=' ' read -r pane_id waiting pane_pid pane_cmd; do
 	[ "$waiting" = "1" ] || continue
 
@@ -55,8 +79,23 @@ while IFS=' ' read -r pane_id waiting pane_pid pane_cmd; do
 
 	# Verify a claude process is running (as child or as the pane command itself).
 	if [ "$pane_cmd" != "claude" ] && ! pgrep -x claude -P "$pane_pid" >/dev/null 2>&1; then
-		# Stale flag — clear it and skip.
-		tmux set-option -p -t "$pane_id" -u @claude_waiting 2>/dev/null || true
+		# Stale flag — unset it and clean up the window marker if needed.
+		tmux set-option -pu -t "$pane_id" @claude_waiting 2>/dev/null || true
+
+		win=$(tmux display-message -t "$pane_id" -p '#{window_id}' 2>/dev/null) || true
+		if [ -n "$win" ]; then
+			case " $cleaned_windows " in
+				*" $win "*) ;;
+				*)
+					others=$(tmux list-panes -t "$win" -F '#{@claude_waiting}' 2>/dev/null) || true
+					if ! echo "$others" | grep -qxF '1'; then
+						strip_window_marker "$win"
+						cleaned_windows="$cleaned_windows $win"
+					fi
+					;;
+			esac
+		fi
+
 		continue
 	fi
 
