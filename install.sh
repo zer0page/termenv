@@ -199,6 +199,9 @@ if [ ! -f "$HOME/.termenv.conf" ]; then
 # Language modules
 TERMENV_VIM_GO=0
 TERMENV_VIM_RUST=0
+
+# Agent used by the yolo command
+TERMENV_AGENT=claude
 CONF
 	echo "  Created ~/.termenv.conf (edit to enable modules)"
 fi
@@ -232,14 +235,18 @@ fi
 
 if [ "${TERMENV_CI:-0}" != "1" ]; then
 	# Agent setup (optional)
-	printf "Install agent tooling (Claude Code, Prism)? [Y/n] "
+	printf "Configure agent tooling (current: %s)? [Y/n] " "${TERMENV_AGENT:-claude}"
 	read -r AGENT_REPLY
 	if [ "$AGENT_REPLY" != "n" ] && [ "$AGENT_REPLY" != "N" ]; then
-		link_one "$HOME/.vim/termenv/modules/agent.vim" "$DIR/vim/modules/agent.vim"
-		link_one "$HOME/.tmux/termenv/modules/agent.conf" "$DIR/tmux/modules/agent.conf"
-		link_one "$HOME/.tmux/termenv/scripts/claude-cycle.sh" "$DIR/tmux/scripts/claude-cycle.sh"
-		echo "  Tip: C-Space cycles to the next idle Claude session"
 		"$DIR/agent/setup.sh"
+		# shellcheck disable=SC1090
+		source "$HOME/.termenv.conf"
+		if [ "$TERMENV_AGENT" = "claude" ]; then
+			link_one "$HOME/.vim/termenv/modules/agent.vim" "$DIR/vim/modules/agent.vim"
+			link_one "$HOME/.tmux/termenv/modules/agent.conf" "$DIR/tmux/modules/agent.conf"
+			link_one "$HOME/.tmux/termenv/scripts/claude-cycle.sh" "$DIR/tmux/scripts/claude-cycle.sh"
+			echo "  Tip: C-Space cycles to the next idle Claude session"
+		fi
 	else
 		echo "  Skipped agent setup"
 	fi
