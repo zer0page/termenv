@@ -95,6 +95,18 @@ HOME="$TEST_ROOT/home" PATH="$TEST_ROOT/bin:/usr/bin:/bin" \
 [ "$(grep -c '^# Agent used by the yolo command$' "$TEST_ROOT/home/.termenv.conf")" -eq 1 ] ||
 	fail "rerunning setup duplicated the agent configuration"
 
+# Existing configuration should be sourced only once per installer run.
+SIDE_EFFECT_HOME="$TEST_ROOT/side-effect-home"
+mkdir -p "$SIDE_EFFECT_HOME"
+cat >"$SIDE_EFFECT_HOME/.termenv.conf" <<EOF
+count=0
+[ ! -f "$SIDE_EFFECT_HOME/source-count" ] || count=\$(cat "$SIDE_EFFECT_HOME/source-count")
+echo \$((count + 1)) >"$SIDE_EFFECT_HOME/source-count"
+TERMENV_AGENT=amp
+EOF
+HOME="$SIDE_EFFECT_HOME" TERMENV_CI=1 "$ROOT/install.sh" >/dev/null
+[ "$(<"$SIDE_EFFECT_HOME/source-count")" -eq 1 ] || fail "installer sourced existing configuration more than once"
+
 # Switching to Amp should remove Claude-only integrations left by an earlier install.
 SWITCH_HOME="$TEST_ROOT/switch-home"
 mkdir -p "$SWITCH_HOME/.vim/termenv/modules" "$SWITCH_HOME/.tmux/termenv/modules" \

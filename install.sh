@@ -204,9 +204,9 @@ TERMENV_VIM_RUST=0
 TERMENV_AGENT=claude
 CONF
 	echo "  Created ~/.termenv.conf (edit to enable modules)"
+	# shellcheck disable=SC1090
+	source "$HOME/.termenv.conf"
 fi
-# shellcheck disable=SC1090
-source "$HOME/.termenv.conf"
 
 # Wire shell extensions into .zshrc
 ZSH_SOURCE='source ~/.zsh/termenv/zshrc'
