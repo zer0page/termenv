@@ -256,7 +256,7 @@ else
 	RECONCILE_AGENT=true
 fi
 
-if $RECONCILE_AGENT && [ "$TERMENV_AGENT" = "claude" ]; then
+if $RECONCILE_AGENT && [ "${TERMENV_AGENT:-claude}" = "claude" ]; then
 	link_one "$HOME/.vim/termenv/modules/agent.vim" "$DIR/vim/modules/agent.vim"
 	link_one "$HOME/.tmux/termenv/modules/agent.conf" "$DIR/tmux/modules/agent.conf"
 	link_one "$HOME/.tmux/termenv/scripts/claude-cycle.sh" "$DIR/tmux/scripts/claude-cycle.sh"

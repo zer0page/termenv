@@ -110,6 +110,17 @@ HOME="$SWITCH_HOME" TERMENV_CI=1 "$ROOT/install.sh" >/dev/null
 [ ! -L "$SWITCH_HOME/.tmux/termenv/modules/agent.conf" ] || fail "Amp install left Claude tmux integration linked"
 [ ! -L "$SWITCH_HOME/.tmux/termenv/scripts/claude-cycle.sh" ] || fail "Amp install left Claude cycle script linked"
 
+# Existing configs without an agent setting should retain legacy Claude behavior.
+LEGACY_HOME="$TEST_ROOT/legacy-home"
+mkdir -p "$LEGACY_HOME"
+cat >"$LEGACY_HOME/.termenv.conf" <<'EOF'
+TERMENV_VIM_GO=0
+EOF
+HOME="$LEGACY_HOME" TERMENV_CI=1 "$ROOT/install.sh" >/dev/null
+[ -L "$LEGACY_HOME/.vim/termenv/modules/agent.vim" ] || fail "legacy config did not default to Claude vim integration"
+[ -L "$LEGACY_HOME/.tmux/termenv/modules/agent.conf" ] || fail "legacy config did not default to Claude tmux integration"
+[ -L "$LEGACY_HOME/.tmux/termenv/scripts/claude-cycle.sh" ] || fail "legacy config did not default to Claude cycle script"
+
 # Declining agent setup should not enable Claude-specific integrations.
 cat >"$TEST_ROOT/bin/brew" <<'EOF'
 #!/usr/bin/env bash
