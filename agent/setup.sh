@@ -46,10 +46,12 @@ esac
 
 mkdir -p "$(dirname "$CONFIG_FILE")"
 touch "$CONFIG_FILE"
-config_tmp="$(mktemp "${TMPDIR:-/tmp}/termenv-conf.XXXXXX")"
+config_tmp="$(mktemp "$(dirname "$CONFIG_FILE")/.termenv-conf.XXXXXX")"
+trap 'rm -f "$config_tmp"' EXIT
 awk '$0 != "# Agent used by the yolo command" && !/^TERMENV_AGENT=/' "$CONFIG_FILE" >"$config_tmp"
 printf '# Agent used by the yolo command\nTERMENV_AGENT=%s\n' "$SELECTED_AGENT" >>"$config_tmp"
 mv "$config_tmp" "$CONFIG_FILE"
+trap - EXIT
 
 echo "Setting up $SELECTED_AGENT agent tooling..."
 

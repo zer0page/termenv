@@ -110,6 +110,31 @@ HOME="$SWITCH_HOME" TERMENV_CI=1 "$ROOT/install.sh" >/dev/null
 [ ! -L "$SWITCH_HOME/.tmux/termenv/modules/agent.conf" ] || fail "Amp install left Claude tmux integration linked"
 [ ! -L "$SWITCH_HOME/.tmux/termenv/scripts/claude-cycle.sh" ] || fail "Amp install left Claude cycle script linked"
 
+# Declining agent setup should not enable Claude-specific integrations.
+cat >"$TEST_ROOT/bin/brew" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+cat >"$TEST_ROOT/bin/vim" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+cat >"$TEST_ROOT/bin/just" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "$TEST_ROOT/bin/brew" "$TEST_ROOT/bin/vim" "$TEST_ROOT/bin/just"
+SKIP_HOME="$TEST_ROOT/skip-home"
+mkdir -p "$SKIP_HOME/.vim/autoload" "$SKIP_HOME/.tmux/plugins/tpm"
+touch "$SKIP_HOME/.vim/autoload/plug.vim"
+cat >"$SKIP_HOME/.termenv.conf" <<'EOF'
+TERMENV_AGENT=claude
+EOF
+printf 'n\n' | HOME="$SKIP_HOME" PATH="$TEST_ROOT/bin:/usr/bin:/bin" "$ROOT/install.sh" >/dev/null
+[ ! -L "$SKIP_HOME/.vim/termenv/modules/agent.vim" ] || fail "skipping agent setup linked Claude vim integration"
+[ ! -L "$SKIP_HOME/.tmux/termenv/modules/agent.conf" ] || fail "skipping agent setup linked Claude tmux integration"
+[ ! -L "$SKIP_HOME/.tmux/termenv/scripts/claude-cycle.sh" ] || fail "skipping agent setup linked Claude cycle script"
+
 # Using the old formula invocation would fail on current Homebrew installs.
 cat >"$TEST_ROOT/bin/brew" <<EOF
 #!/usr/bin/env bash

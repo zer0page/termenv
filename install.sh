@@ -235,6 +235,7 @@ elif [ -f "$HOME/.bashrc" ]; then
 	echo "  Already sourced in ~/.bashrc"
 fi
 
+RECONCILE_AGENT=false
 if [ "${TERMENV_CI:-0}" != "1" ]; then
 	# Agent setup (optional)
 	printf "Configure agent tooling (current: %s)? [Y/n] " "${TERMENV_AGENT:-claude}"
@@ -243,6 +244,7 @@ if [ "${TERMENV_CI:-0}" != "1" ]; then
 		"$DIR/agent/setup.sh"
 		# shellcheck disable=SC1090
 		source "$HOME/.termenv.conf"
+		RECONCILE_AGENT=true
 	else
 		echo "  Skipped agent setup"
 	fi
@@ -250,14 +252,16 @@ if [ "${TERMENV_CI:-0}" != "1" ]; then
 	# Install vim plugins (non-interactive)
 	echo "  Installing vim plugins..."
 	vim -es -u "$HOME/.vimrc" -i NONE -c "PlugInstall" -c "qa" || true
+else
+	RECONCILE_AGENT=true
 fi
 
-if [ "$TERMENV_AGENT" = "claude" ]; then
+if $RECONCILE_AGENT && [ "$TERMENV_AGENT" = "claude" ]; then
 	link_one "$HOME/.vim/termenv/modules/agent.vim" "$DIR/vim/modules/agent.vim"
 	link_one "$HOME/.tmux/termenv/modules/agent.conf" "$DIR/tmux/modules/agent.conf"
 	link_one "$HOME/.tmux/termenv/scripts/claude-cycle.sh" "$DIR/tmux/scripts/claude-cycle.sh"
 	echo "  Tip: C-Space cycles to the next idle Claude session"
-else
+elif $RECONCILE_AGENT; then
 	unlink_one "$HOME/.vim/termenv/modules/agent.vim" "$DIR/vim/modules/agent.vim"
 	unlink_one "$HOME/.tmux/termenv/modules/agent.conf" "$DIR/tmux/modules/agent.conf"
 	unlink_one "$HOME/.tmux/termenv/scripts/claude-cycle.sh" "$DIR/tmux/scripts/claude-cycle.sh"
