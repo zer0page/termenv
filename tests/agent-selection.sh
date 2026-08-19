@@ -34,6 +34,11 @@ EOF
 mkdir -p "$TEST_ROOT/bin" "$TEST_ROOT/home"
 make_fake_agent amp
 make_fake_agent claude
+cat >"$TEST_ROOT/bin/git" <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+chmod +x "$TEST_ROOT/bin/git"
 
 mkdir -p "$TEST_ROOT/home/.claude/claude-skills"
 cat >"$TEST_ROOT/home/.claude/claude-skills/install" <<EOF
@@ -89,6 +94,21 @@ HOME="$TEST_ROOT/home" PATH="$TEST_ROOT/bin:/usr/bin:/bin" \
 	"$ROOT/agent/setup.sh" amp
 [ "$(grep -c '^# Agent used by the yolo command$' "$TEST_ROOT/home/.termenv.conf")" -eq 1 ] ||
 	fail "rerunning setup duplicated the agent configuration"
+
+# Switching to Amp should remove Claude-only integrations left by an earlier install.
+SWITCH_HOME="$TEST_ROOT/switch-home"
+mkdir -p "$SWITCH_HOME/.vim/termenv/modules" "$SWITCH_HOME/.tmux/termenv/modules" \
+	"$SWITCH_HOME/.tmux/termenv/scripts"
+cat >"$SWITCH_HOME/.termenv.conf" <<'EOF'
+TERMENV_AGENT=amp
+EOF
+ln -s "$ROOT/vim/modules/agent.vim" "$SWITCH_HOME/.vim/termenv/modules/agent.vim"
+ln -s "$ROOT/tmux/modules/agent.conf" "$SWITCH_HOME/.tmux/termenv/modules/agent.conf"
+ln -s "$ROOT/tmux/scripts/claude-cycle.sh" "$SWITCH_HOME/.tmux/termenv/scripts/claude-cycle.sh"
+HOME="$SWITCH_HOME" TERMENV_CI=1 "$ROOT/install.sh" >/dev/null
+[ ! -L "$SWITCH_HOME/.vim/termenv/modules/agent.vim" ] || fail "Amp install left Claude vim integration linked"
+[ ! -L "$SWITCH_HOME/.tmux/termenv/modules/agent.conf" ] || fail "Amp install left Claude tmux integration linked"
+[ ! -L "$SWITCH_HOME/.tmux/termenv/scripts/claude-cycle.sh" ] || fail "Amp install left Claude cycle script linked"
 
 # Using the old formula invocation would fail on current Homebrew installs.
 cat >"$TEST_ROOT/bin/brew" <<EOF

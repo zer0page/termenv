@@ -11,9 +11,9 @@ SKILLS_REPO="$HOME/.claude/claude-skills"
 if [ "$1" = "--uninstall" ]; then
 	echo "Uninstalling agent tooling..."
 	if [ -x "$SKILLS_REPO/install" ]; then
-		"$SKILLS_REPO/install" --uninstall || echo "  WARNING: claude-skills uninstall failed; continuing"
+		"$SKILLS_REPO/install" --uninstall || echo "  WARNING: personal skills uninstall failed; continuing"
 	fi
-	echo "  Remove Claude Code and Prism manually if desired."
+	echo "  Remove Amp, Claude Code, and Prism manually if desired."
 	exit 0
 fi
 
