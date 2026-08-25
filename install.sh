@@ -199,8 +199,13 @@ if [ ! -f "$HOME/.termenv.conf" ]; then
 # Language modules
 TERMENV_VIM_GO=0
 TERMENV_VIM_RUST=0
+
+# Agent used by the yolo command
+TERMENV_AGENT=claude
 CONF
 	echo "  Created ~/.termenv.conf (edit to enable modules)"
+	# shellcheck disable=SC1090
+	source "$HOME/.termenv.conf"
 fi
 
 # Wire shell extensions into .zshrc
@@ -230,16 +235,16 @@ elif [ -f "$HOME/.bashrc" ]; then
 	echo "  Already sourced in ~/.bashrc"
 fi
 
+RECONCILE_AGENT=false
 if [ "${TERMENV_CI:-0}" != "1" ]; then
 	# Agent setup (optional)
-	printf "Install agent tooling (Claude Code, Prism)? [Y/n] "
+	printf "Configure agent tooling (current: %s)? [Y/n] " "${TERMENV_AGENT:-claude}"
 	read -r AGENT_REPLY
 	if [ "$AGENT_REPLY" != "n" ] && [ "$AGENT_REPLY" != "N" ]; then
-		link_one "$HOME/.vim/termenv/modules/agent.vim" "$DIR/vim/modules/agent.vim"
-		link_one "$HOME/.tmux/termenv/modules/agent.conf" "$DIR/tmux/modules/agent.conf"
-		link_one "$HOME/.tmux/termenv/scripts/claude-cycle.sh" "$DIR/tmux/scripts/claude-cycle.sh"
-		echo "  Tip: C-Space cycles to the next idle Claude session"
 		"$DIR/agent/setup.sh"
+		# shellcheck disable=SC1090
+		source "$HOME/.termenv.conf"
+		RECONCILE_AGENT=true
 	else
 		echo "  Skipped agent setup"
 	fi
@@ -247,6 +252,19 @@ if [ "${TERMENV_CI:-0}" != "1" ]; then
 	# Install vim plugins (non-interactive)
 	echo "  Installing vim plugins..."
 	vim -es -u "$HOME/.vimrc" -i NONE -c "PlugInstall" -c "qa" || true
+else
+	RECONCILE_AGENT=true
+fi
+
+if $RECONCILE_AGENT && [ "${TERMENV_AGENT:-claude}" = "claude" ]; then
+	link_one "$HOME/.vim/termenv/modules/agent.vim" "$DIR/vim/modules/agent.vim"
+	link_one "$HOME/.tmux/termenv/modules/agent.conf" "$DIR/tmux/modules/agent.conf"
+	link_one "$HOME/.tmux/termenv/scripts/claude-cycle.sh" "$DIR/tmux/scripts/claude-cycle.sh"
+	echo "  Tip: C-Space cycles to the next idle Claude session"
+elif $RECONCILE_AGENT; then
+	unlink_one "$HOME/.vim/termenv/modules/agent.vim" "$DIR/vim/modules/agent.vim"
+	unlink_one "$HOME/.tmux/termenv/modules/agent.conf" "$DIR/tmux/modules/agent.conf"
+	unlink_one "$HOME/.tmux/termenv/scripts/claude-cycle.sh" "$DIR/tmux/scripts/claude-cycle.sh"
 fi
 
 echo ""
